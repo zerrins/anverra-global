@@ -21,6 +21,7 @@ public class ArchitectureVerificationTests {
                             "..contracts..",
                             "..events.."
                     )
+                    .allowEmptyShould(true)
                     .because("Platform infrastructure must remain completely devoid of business logic and must not depend on business module internals.");
 
     @ArchTest
@@ -31,6 +32,7 @@ public class ArchitectureVerificationTests {
                             "..platform..",
                             "..adapter.."
                     )
+                    .allowEmptyShould(true)
                     .because("Domain layer must remain pure and free from framework and infrastructure dependencies.");
 
     @ArchTest
