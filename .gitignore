@@ -1,0 +1,28 @@
+# IntelliJ IDEA / WebStorm
+.idea/
+*.iml
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# VS Code
+.vscode/
+
+# Maven
+target/
+*.releaseBackup
+
+# Node
+node_modules/
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.env
+application-local.yml
+application-local.properties

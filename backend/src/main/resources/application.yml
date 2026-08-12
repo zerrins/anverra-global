@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: anverraglobal-backend
+  
+  # Spring Modulith configurations
+  modulith:
+    events:
+      jdbc:
+        schema-initialization: true
+
+  # Flyway core configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true

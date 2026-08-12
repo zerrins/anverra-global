@@ -1,0 +1,8 @@
+# Template for local development configuration
+# Copy this file to application-local.yml (which is gitignored) and add secrets there.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/anverraglobal
+    username: anverra_user
+    password: # FILL IN LOCAL SECRETS HERE
