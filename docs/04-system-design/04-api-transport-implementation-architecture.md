@@ -213,6 +213,7 @@ To preserve Hexagonal Architecture purity, controllers MUST adhere to strict bou
 > 2. **Zero Database Access:** Controllers MUST NOT import or reference Spring Data repositories, JPA/JDBC classes, or outbound persistence adapters.
 > 3. **Zero Direct Domain Returns:** Controllers MUST NOT return classes from `domain/` directly across the HTTP network boundary.
 > 4. **Port Inversion:** Controllers MUST invoke application use cases exclusively through interfaces in `port.inbound`.
+> 5. **Phase 5 Clarification (Analytical APIs):** Operational modules (e.g., Policy, Commission) MUST NOT expose analytical or aggregate statistics APIs. As established in AEOS-P04-D16, all analytical/statistics APIs must be exposed by the `Reporting` module.
 
 ---
 

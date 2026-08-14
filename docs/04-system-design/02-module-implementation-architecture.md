@@ -155,11 +155,11 @@ AnverraGlobal business modules integrate three complementary architectural parad
 
 ---
 
-# 6. Seven Approved Module Boundaries
+# 6. Eight Approved Module Boundaries
 
 ## 6.1 Module Inventory
 
-Phase 2 ([AEOS-P02-S01-D01](file:///Users/shashank/Projects/anverra-global/docs/02-repository-blueprint/01-system-repository-blueprint/01-system-blueprint.md)) established exactly seven approved business modules. D02 mandates that every business module exist strictly within its approved package path beneath `com.anverraglobal`:
+Phase 2 ([AEOS-P02-S01-D01](file:///Users/shashank/Projects/anverra-global/docs/02-repository-blueprint/01-system-repository-blueprint/01-system-blueprint.md)) established seven approved business modules, and Phase 5 D16 formally introduced Organization Management, bringing the total to eight. D02 mandates that every business module exist strictly within its approved package path beneath `com.anverraglobal`:
 
 | Module Name | Java Package Root | Business Category | Owning Phase 2 Document |
 |---|---|---|---|
@@ -170,28 +170,25 @@ Phase 2 ([AEOS-P02-S01-D01](file:///Users/shashank/Projects/anverra-global/docs/
 | **Commission Management** | `com.anverraglobal.commission` | Core Business | AEOS-P02-S02-D05 |
 | **Notification Management** | `com.anverraglobal.notification` | Supporting Business | AEOS-P02-S02-D06 |
 | **Reporting & Analytics** | `com.anverraglobal.reporting` | Supporting Business | AEOS-P02-S02-D07 |
+| **Organization Management** | `com.anverraglobal.organization` | Core Business | AEOS-P04-D16 |
 
 ## 6.2 Strict Module Boundary Rules
 
 - **No Renaming:** Module package names must exactly match the canonical names above.
-- **No Deletions or Mergers:** All seven modules are required and must remain distinct top-level packages under `com.anverraglobal`.
+- **No Deletions or Mergers:** All eight modules are required and must remain distinct top-level packages under `com.anverraglobal`.
 - **No Additional Business Modules:** Creating new top-level business module packages (e.g., `com.anverraglobal.billing` or `com.anverraglobal.claims`) is strictly prohibited in Phase 4.
 
 ## 6.3 Strict Protection of Unresolved Capabilities
 
 Per AEOS-P04-D00 §24, the following business capabilities are **unresolved** and deferred to future architectural phases:
 
-- Agent Management
-- Sub-Agent Management
-- Dealer Management
 - Partner Management
-- Organization Management
 - Proposal Management
 - Document & KYC Management
 - Administration
 
 > [!CAUTION]
-> **PROHIBITION:** Developers and AI coding agents MUST NOT create packages, sub-packages, modules, or directories representing unresolved capabilities. The creation of `agent/`, `subagent/`, `dealer/`, `partner/`, `organization/`, `proposal/`, `document/`, `kyc/`, or `admin/` packages anywhere in the codebase is a severe structural violation.
+> **PROHIBITION:** Developers and AI coding agents MUST NOT create packages, sub-packages, modules, or directories representing unresolved capabilities. The creation of `agent/`, `subagent/`, `dealer/`, `partner/`, `proposal/`, `document/`, `kyc/`, or `admin/` packages anywhere in the codebase is a severe structural violation.
 
 ---
 
@@ -663,6 +660,7 @@ Transaction orchestration must remain outside the domain layer. The concrete tra
 ## 24.2 Conceptual Boundary Rules
 - Domain objects inside `domain/` do NOT manage transactions and MUST NOT use `@Transactional`.
 - Detailed transaction propagation, isolation levels, DataSource configurations, and event publication transaction semantics remain governed by **AEOS-P04-D03** (Persistence) and **AEOS-P04-D05** (Events).
+- **Phase 5 Exception (Cross-Module Transaction):** A narrow cross-module transactional exception is authorized exclusively for the atomic Policy Premium Update and Commission RESET → UNSET business operation, as explicitly approved in AEOS-P04-D16 (Phase 5 Architecture Decisions). No general cross-module transaction permission is granted.
 
 ---
 
@@ -719,7 +717,7 @@ D02 mandates that module-internal package structures and boundary rules are auto
 4. **Ports vs Adapters Rule:** Enforces that application services implement interfaces in `port.inbound`; inbound adapters depend on/use interfaces in `port.inbound`; and outbound adapters implement interfaces in `port.outbound`.
 5. **Private Package Encapsulation Rule:** Enforces that no module can import classes from another module's `domain`, `application`, `port`, or `adapter` packages.
 6. **Contracts & Events Exposure Rule:** Enforces that cross-module references are restricted strictly to approved types inside `contracts` and `events`.
-7. **Unresolved Capability Rule:** Enforces that no package containing `agent`, `subagent`, `dealer`, `partner`, `organization`, `proposal`, `document`, `kyc`, or `admin` exists.
+7. **Unresolved Capability Rule:** Enforces that no package containing `agent`, `subagent`, `dealer`, `partner`, `proposal`, `document`, `kyc`, or `admin` exists.
 
 ---
 
@@ -729,7 +727,7 @@ When generating, modifying, or refactoring code within backend business modules,
 
 1. **Read Governing Docs:** Inspect D00, D01, and D02 before creating or modifying any package or class under `com.anverraglobal`.
 2. **Preserve Seven Approved Modules:** Never create, rename, delete, or merge business modules. Operate strictly within the seven approved module roots.
-3. **Respect Unresolved Capabilities Protection:** NEVER create packages, sub-packages, or classes for unresolved capabilities (`agent`, `subagent`, `dealer`, `partner`, `organization`, `proposal`, `document`, `kyc`, `admin`).
+3. **Respect Unresolved Capabilities Protection:** NEVER create packages, sub-packages, or classes for unresolved capabilities (`agent`, `subagent`, `dealer`, `partner`, `proposal`, `document`, `kyc`, `admin`).
 4. **Obey Canonical Sub-Packages:** Every module file must reside in one of the approved package locations: `domain`, `application`, `port.inbound`, `port.outbound`, `adapter.inbound`, `adapter.outbound`, `contracts`, or `events`.
 5. **Enforce Absolute Domain Purity:** Never add Spring, JDBC, JPA, HTTP, Jackson, Security, or `platform/` imports/annotations to any file in `domain/`.
 6. **Enforce Ports vs Adapters Separation:** Place use-case interfaces in `port.inbound`, outbound SPIs in `port.outbound`, inbound adapters in `adapter.inbound`, and outbound adapters in `adapter.outbound`.

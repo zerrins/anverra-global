@@ -1,0 +1,32 @@
+# REQ-DEC-002: Customer Definition & MVP Lifecycle
+
+- **Capability:** Customer
+- **Status:** AUTHORITATIVE / RESOLVED
+- **Decision owner:** Human/Product/Business decision
+- **Customer types:** Individual, Organization
+- **Required business information:**
+  - Unique customer identity
+  - Customer type
+  - Name
+  - Contact information
+  - Address information
+  - Lifecycle status
+  - Created/updated timestamps
+- **Individual identity information:** is required for Individual customers.
+- **Organization legal/business identity information:** is required for Organization customers.
+- **Initial lifecycle states:** ACTIVE, INACTIVE
+- **Allowed lifecycle transitions:**
+  - ACTIVE -> INACTIVE
+  - INACTIVE -> ACTIVE
+- **Customer is conceptually distinct from Identity.**
+- **No Customer -> Identity dependency is established.**
+- **No Customer -> Policy dependency is established.**
+- **Exact technical fields/database attributes remain unresolved.**
+- **PAN/Aadhaar/GSTIN and other regulatory identifiers remain unresolved.**
+- **KYC remains unresolved.**
+- **Database/persistence remains unresolved.**
+- **API/OpenAPI remains unresolved.**
+- **Events remain unresolved.**
+- **Authorization remains unresolved.**
+- **UI/UX remains unresolved.**
+- **Concrete cross-module relationships remain unresolved.**

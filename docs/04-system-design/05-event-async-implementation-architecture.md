@@ -270,6 +270,9 @@ At a minimum, an event contract should carry:
 
 *(D05 must not define actual business payloads).*
 
+**Phase 5 Clarification (Reporting Analytics):**
+As established in AEOS-P04-D16, operational modules (e.g., Policy, Commission) must provide governed events to the `Reporting` module for analytics and read-model generation. The exact event contracts, payloads, and persistence requirements remain future D03/D05 technical-design work.
+
 ---
 
 # 17. Event vs Command Model

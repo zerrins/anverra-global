@@ -79,7 +79,7 @@ The following concerns are explicitly outside the scope of D03 and belong to des
 - **O9:** Shared vs independently generated client API types — assigned to **AEOS-P04-D07**.
 - Business database table schemas, column DDLs, index definitions, foreign key constraints, or SQL scripts for specific features.
 - Domain entity attributes, value object fields, or aggregate root definitions.
-- Modeling or persistence design for unresolved business capabilities (`Agent`, `Sub-Agent`, `Dealer`, `Partner`, `Organization`, `Proposal`, `Document`, `KYC`, `Administration`).
+- Modeling or persistence design for unresolved business capabilities (`Partner`, `Proposal`, `KYC`, `Administration`). *(Note: Organization, Dealer, Agent, and Document are now approved Phase 5 capabilities).*
 - REST controller mappings, HTTP DTOs, or OpenAPI validation annotations — assigned to **AEOS-P04-D04**.
 - Event listener retry queues, dead-letter tables, or outbox schema details — assigned to **AEOS-P04-D05**.
 - Security filter chains, OAuth2/OIDC token stores, or authorization matrix tables — assigned to **AEOS-P04-D06**.
@@ -122,7 +122,7 @@ com.anverraglobal.<module>/
 
 AnverraGlobal persistence operates on three core principles:
 
-1. **Constitutional Data Ownership:** Each of the seven approved business modules (`identity`, `customer`, `product`, `policy`, `commission`, `notification`, `reporting`) exclusively owns its authoritative persistence. No module may directly read or write another module's database tables.
+1. **Constitutional Data Ownership:** Each of the eight approved business modules (`identity`, `customer`, `product`, `organization`, `policy`, `commission`, `notification`, `reporting`) exclusively owns its authoritative persistence. No module may directly read or write another module's database tables.
 2. **Hexagonal Persistence Decoupling:** The domain layer defines pure domain models. The application layer defines outbound repository ports (`port.outbound`). Concrete database access code resides exclusively inside `adapter.outbound.persistence`.
 3. **Aggregate-Oriented Relational Mapping:** Spring Data JDBC maps aggregate roots to relational tables without Hibernate proxying, session caching, or lazy loading side-effects.
 
@@ -165,7 +165,7 @@ AnverraGlobal persistence operates on three core principles:
 │                                  POSTGRESQL DATABASE                                     │
 │                                                                                          │
 │  ┌───────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐ ┌────────────┐  │
-│  │ identity      │ │ customer      │ │ product       │ │ policy        │ │ ...        │  │
+│  │ identity      │ │ customer      │ │ organization  │ │ policy        │ │ ...        │  │
 │  │ schema        │ │ schema        │ │ schema        │ │ schema        │ │ schemas    │  │
 │  └───────────────┘ └───────────────┘ └───────────────┘ └───────────────┘ └────────────┘  │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
@@ -321,7 +321,7 @@ All module tables reside in the PostgreSQL `public` schema with table prefixes (
 - *Disadvantages:* Causes global schema clutter, prevents database-level role isolation, and increases risk of cross-module SQL joins.
 
 ### Candidate B — Logical Module-Owned Schemas in a Single PostgreSQL Database
-Each of the seven approved business modules owns a dedicated PostgreSQL schema within a single database instance (`identity`, `customer`, `product`, `policy`, `commission`, `notification`, `reporting`).
+Each of the eight approved business modules owns a dedicated PostgreSQL schema within a single database instance (`identity`, `customer`, `product`, `organization`, `policy`, `commission`, `notification`, `reporting`).
 - *Advantages:* Enforces strict logical isolation, enables schema-level Flyway migrations, supports schema-level DB user permissions, and aligns perfectly with the single-process Modular Monolith architecture.
 
 ### Candidate C — Separate Physical PostgreSQL Databases per Business Module
@@ -343,10 +343,14 @@ Every business module exclusively owns its matching PostgreSQL schema:
 | **Identity & Access** | `com.anverraglobal.identity` | `identity` |
 | **Customer Management** | `com.anverraglobal.customer` | `customer` |
 | **Product Catalogue** | `com.anverraglobal.product` | `product` |
+| **Organization & Hierarchy** | `com.anverraglobal.organization` | `organization` |
 | **Policy Lifecycle** | `com.anverraglobal.policy` | `policy` |
 | **Commission Management** | `com.anverraglobal.commission` | `commission` |
 | **Notification Management** | `com.anverraglobal.notification` | `notification` |
 | **Reporting & Analytics** | `com.anverraglobal.reporting` | `reporting` |
+
+## 11.4 Phase 5 Clarification — Reporting Ownership
+As established in AEOS-P04-D16, the `Reporting` module owns Policy and Commission analytics/statistics and their read-model architecture. Operational modules (Policy, Commission) must not expose analytical APIs directly; they must provide governed events/contracts to Reporting. The exact read-model schemas within the `reporting` schema remain future D03/D05 technical-design work.
 
 ---
 
@@ -415,6 +419,7 @@ src/main/resources/
         ├── identity/      ──► Module Migration Directory
         ├── customer/      ──► Module Migration Directory
         ├── product/       ──► Module Migration Directory
+        ├── organization/  ──► Module Migration Directory
         ├── policy/        ──► Module Migration Directory
         ├── commission/    ──► Module Migration Directory
         ├── notification/  ──► Module Migration Directory
@@ -424,7 +429,8 @@ src/main/resources/
 ## 14.2 Migration Execution Lifecycle
 - **Schema Creation:** The initial migration for a module must execute `CREATE SCHEMA IF NOT EXISTS <module>;`.
 - **Flyway Lifecycle:** D03 supports Flyway execution during application startup for development and local testing, while supporting CI/CD-driven pre-deployment migration execution for production environments.
-- **Versioning & Ordering Strategy:** When multiple module-specific locations participate in Flyway execution, a deterministic versioning strategy (such as explicit module-prefixed or timestamp-ordered version keys) and central location search path configuration must be maintained to ensure ordered, unambiguous execution.
+- **Versioning & Ordering Strategy (AUTHORITATIVE):** Use sequential numeric Flyway versions (e.g., `V1__description.sql`, `V2__description.sql`). Do NOT use timestamps, semantic application-release versions, or module-prefixed versions. Exact migration ordering is determined by the numeric version sequence across the entire application.
+- **Repeatable & Test Migrations (AUTHORITATIVE):** Do NOT use repeatable (`R__`) migrations initially; production schema changes must use versioned migrations only. Do NOT create test-data migrations in the production Flyway directories. Test data must be handled through the existing test infrastructure.
 
 ---
 
@@ -683,7 +689,17 @@ When generating or modifying persistence code, human engineers and AI coding age
 
 ---
 
-# 28. Deferred Decisions Register
+# 28. Data Retention & Deletion (AUTHORITATIVE)
+
+- **Policy:** Has no physical DELETE operation. Do NOT introduce generic soft-delete semantics merely for architectural consistency.
+- **Commission:** Does not receive generic soft-delete semantics. Do NOT add `deleted_at` solely for architectural consistency.
+- **Policy Documents:** Document removal is an explicit business operation and does not imply Policy deletion.
+- **Reporting:** Reporting read-models are projections that may be deleted, rebuilt, or reconciled. They are not authoritative for Policy or Commission history.
+- **Future Retention:** Any future retention or deletion requirement requires an explicit business decision. Do not invent retention policies.
+
+---
+
+# 29. Deferred Decisions Register
 
 D02 and D03 explicitly preserve the open status of downstream design decisions:
 
@@ -703,7 +719,7 @@ Additionally, D03 defers specific business database tables, columns, indexes, Fl
 
 ---
 
-# 29. Traceability
+# 30. Traceability
 
 D03 maintains complete traceability to prior authoritative documents:
 
@@ -726,9 +742,9 @@ D03 maintains complete traceability to prior authoritative documents:
 
 ---
 
-# 30. Definition of Done & Final Baseline Status
+# 31. Definition of Done & Final Baseline Status
 
-## 30.1 Definition of Done
+## 31.1 Definition of Done
 This document (AEOS-P04-D03) is complete when:
 1. Open Decision **O6** (PostgreSQL Schema Strategy) is formally resolved (Logical Module-Owned Schemas selected).
 2. Open Decision **O8** (DataSource Pattern) is formally resolved (Centralized HikariCP DataSource selected).
@@ -742,10 +758,10 @@ This document (AEOS-P04-D03) is complete when:
 10. All 30 required sections are present and fully articulated.
 11. No source code, Java classes, business database tables, or downstream documents (D04+) were created.
 
-## 30.2 Final Status
-This document is authored and recorded as **Baseline Candidate**.
+## 31.2 Final Status
+This document is authored and recorded as **Baseline Candidate**. (Updated: Phase 5 APPROVED).
 
-## 30.3 Stop Rule & Next Step
+## 31.3 Stop Rule & Next Step
 - **Authoring Position 4 Complete:** AEOS-P04-D03 is fully authored.
 - **Do NOT proceed to AEOS-P04-D04.**
 - **Do NOT create Java classes, database schemas, or API endpoints.**

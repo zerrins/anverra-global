@@ -162,7 +162,10 @@ The backend security boundary will validate the token through the configured Spr
 
 # 7. Identity Module Integration
 
-The `identity` business module owns the business rules for users, registration, and credentials. 
+The `identity` business module owns the business rules for users, registration, and credentials. Identity remains responsible for authentication and RBAC.
+
+**Phase 5 Exception / Clarification:**
+As established in AEOS-P04-D16, the Identity module MUST NOT encode or own the authoritative organizational hierarchy (Dealer/Branch/Agent/Data Entry relationships). A dedicated Organization/Hierarchy capability owns these relationships, and Identity remains strictly restricted to identity, authentication, and RBAC.
 
 **Architectural Boundary:**
 - D06 establishes that Spring Security intercepts HTTP requests, extracts the JWT, and sets the authenticated principal.
