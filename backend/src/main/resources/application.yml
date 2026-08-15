@@ -6,7 +6,7 @@ spring:
   modulith:
     events:
       jdbc:
-        schema-initialization: true
+        # schema initialization should be managed via Flyway in production
 
   # Flyway core configuration
   flyway:
