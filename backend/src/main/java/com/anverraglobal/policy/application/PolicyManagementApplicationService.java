@@ -5,7 +5,11 @@ import com.anverraglobal.organization.contracts.OrganizationScopeResolutionServi
 import com.anverraglobal.organization.contracts.dto.OrganizationScope;
 import com.anverraglobal.policy.domain.Policy;
 import com.anverraglobal.policy.domain.PolicyStatus;
+import com.anverraglobal.policy.event.PolicyActivatedEvent;
+import com.anverraglobal.policy.event.PolicyCreatedEvent;
+import com.anverraglobal.policy.event.PolicyDeactivatedEvent;
 import com.anverraglobal.policy.event.PolicyPremiumUpdatedEvent;
+import com.anverraglobal.policy.event.PolicyReactivatedEvent;
 import com.anverraglobal.policy.application.port.outbound.PolicyRepositoryPort;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -45,7 +49,15 @@ public class PolicyManagementApplicationService {
         
         assertScope(scope, policy);
 
-        return policyRepositoryPort.save(policy);
+        Policy saved = policyRepositoryPort.save(policy);
+        
+        PolicyCreatedEvent event = PolicyCreatedEvent.create(
+                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(), 
+                saved.getCustomerId(), saved.getAgentAId(), saved.getAgentBId(), 
+                saved.getBranchId(), saved.getStatus().name(), saved.getPremium());
+        eventPublisher.publishEvent(event);
+        
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -99,9 +111,16 @@ public class PolicyManagementApplicationService {
         OrganizationScope scope = scopeResolutionService.resolveScope(identityId, role);
         Policy policy = getScopedPolicy(policyId, scope);
 
-        policy.activate(isCommissionConfigured);
+        boolean authoritativeCommissionStatus = commissionManagementService.isCommissionConfigured(policyId);
+        policy.activate(authoritativeCommissionStatus);
         
-        policyRepositoryPort.save(policy);
+        Policy saved = policyRepositoryPort.save(policy);
+        
+        PolicyActivatedEvent event = PolicyActivatedEvent.create(
+                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(), 
+                saved.getCustomerId(), saved.getAgentAId(), saved.getAgentBId(), 
+                saved.getBranchId(), saved.getStatus().name(), saved.getPremium());
+        eventPublisher.publishEvent(event);
     }
 
     @Transactional
@@ -111,12 +130,30 @@ public class PolicyManagementApplicationService {
 
         policy.deactivate();
         
-        policyRepositoryPort.save(policy);
+        Policy saved = policyRepositoryPort.save(policy);
+        
+        PolicyDeactivatedEvent event = PolicyDeactivatedEvent.create(
+                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(), 
+                saved.getCustomerId(), saved.getAgentAId(), saved.getAgentBId(), 
+                saved.getBranchId(), saved.getStatus().name(), saved.getPremium());
+        eventPublisher.publishEvent(event);
     }
 
     @Transactional
     public void reactivatePolicy(UUID identityId, String role, UUID policyId, boolean isCommissionConfigured) {
-        activatePolicy(identityId, role, policyId, isCommissionConfigured);
+        OrganizationScope scope = scopeResolutionService.resolveScope(identityId, role);
+        Policy policy = getScopedPolicy(policyId, scope);
+
+        boolean authoritativeCommissionStatus = commissionManagementService.isCommissionConfigured(policyId);
+        policy.activate(authoritativeCommissionStatus);
+        
+        Policy saved = policyRepositoryPort.save(policy);
+        
+        PolicyReactivatedEvent event = PolicyReactivatedEvent.create(
+                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(), 
+                saved.getCustomerId(), saved.getAgentAId(), saved.getAgentBId(), 
+                saved.getBranchId(), saved.getStatus().name(), saved.getPremium());
+        eventPublisher.publishEvent(event);
     }
 
     @Transactional

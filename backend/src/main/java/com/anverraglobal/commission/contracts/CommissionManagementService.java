@@ -30,4 +30,13 @@ public interface CommissionManagementService {
      * @param policyPremium the premium of the policy, used for validation
      */
     void configureCommission(UUID policyId, String commissionType, java.math.BigDecimal totalCommissionValue, java.math.BigDecimal agentAShare, java.math.BigDecimal agentBShare, java.math.BigDecimal policyPremium);
+
+    /**
+     * Authoritatively checks whether a commission is configured for the given policy.
+     * Returns true if the Commission aggregate exists and its status is CONFIGURED.
+     * 
+     * @param policyId the identity of the policy
+     * @return true if configured, false if UNSET or missing
+     */
+    boolean isCommissionConfigured(UUID policyId);
 }

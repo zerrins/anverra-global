@@ -26,7 +26,7 @@ public class Commission {
     }
 
     public static Commission createUnset(UUID policyId) {
-        return new Commission(policyId, CommissionStatus.UNSET, null, null, null, null, 0L);
+        return new Commission(policyId, CommissionStatus.UNSET, null, null, null, null, null);
     }
 
     public void resetToUnset() {

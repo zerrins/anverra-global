@@ -91,6 +91,8 @@ public class PolicyController {
         UUID identityId = extractIdentityId(principal);
         String role = extractRole(principal);
         boolean isCommissionConfigured = request != null && request.isCommissionConfigured();
+        // The isCommissionConfigured flag from the client is kept for API compatibility
+        // but is ignored by the backend which uses the authoritative Commission state.
         policyService.activatePolicy(identityId, role, policyId, isCommissionConfigured);
         return ResponseEntity.ok().build();
     }
@@ -113,6 +115,8 @@ public class PolicyController {
         UUID identityId = extractIdentityId(principal);
         String role = extractRole(principal);
         boolean isCommissionConfigured = request != null && request.isCommissionConfigured();
+        // The isCommissionConfigured flag from the client is kept for API compatibility
+        // but is ignored by the backend which uses the authoritative Commission state.
         policyService.reactivatePolicy(identityId, role, policyId, isCommissionConfigured);
         return ResponseEntity.ok().build();
     }

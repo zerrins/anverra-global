@@ -20,11 +20,15 @@ public class CommissionManagementServiceImpl implements CommissionManagementServ
         this.eventPublisher = eventPublisher;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     @Override
     public void resetToUnset(UUID policyId) {
-        Commission commission = commissionRepositoryPort.findById(policyId)
-                .orElseThrow(() -> new IllegalArgumentException("Commission not found for policy: " + policyId));
+        java.util.Optional<Commission> optionalCommission = commissionRepositoryPort.findById(policyId);
+        if (optionalCommission.isEmpty()) {
+            return; // missing means UNSET semantically, no-op required
+        }
         
+        Commission commission = optionalCommission.get();
         commission.resetToUnset();
         
         Commission saved = commissionRepositoryPort.save(commission);
@@ -46,7 +50,7 @@ public class CommissionManagementServiceImpl implements CommissionManagementServ
     @Override
     public void configureCommission(UUID policyId, String commissionType, java.math.BigDecimal totalCommissionValue, java.math.BigDecimal agentAShare, java.math.BigDecimal agentBShare, java.math.BigDecimal policyPremium) {
         Commission commission = commissionRepositoryPort.findById(policyId)
-                .orElseThrow(() -> new java.util.NoSuchElementException("Commission not found for policy: " + policyId));
+                .orElseGet(() -> Commission.createUnset(policyId));
         
         com.anverraglobal.commission.domain.CommissionType typeEnum = commissionType != null 
                 ? com.anverraglobal.commission.domain.CommissionType.valueOf(commissionType.toUpperCase()) 
@@ -67,5 +71,12 @@ public class CommissionManagementServiceImpl implements CommissionManagementServ
         );
         
         eventPublisher.publishEvent(event);
+    }
+
+    @Override
+    public boolean isCommissionConfigured(UUID policyId) {
+        return commissionRepositoryPort.findById(policyId)
+                .map(c -> c.getStatus() == com.anverraglobal.commission.domain.CommissionStatus.CONFIGURED)
+                .orElse(false);
     }
 }

@@ -99,7 +99,7 @@ public class ReportingPersistenceAdapter implements ReportingOutboundPort {
                 premium, status, policy_aggregate_version, commission_aggregate_version
             ) VALUES (
                 :policyId, :policyNumber, :customerId, :agentAId, :agentBId, :branchId, 
-                :premium, :status, :policyAggregateVersion, 0
+                :premium, :status, :policyAggregateVersion, -1
             ) ON CONFLICT (policy_id) DO UPDATE SET
                 policy_number = EXCLUDED.policy_number,
                 customer_id = EXCLUDED.customer_id,
@@ -202,6 +202,13 @@ public class ReportingPersistenceAdapter implements ReportingOutboundPort {
                 .addValue("agentBShare", event.agentBShare())
                 .addValue("commissionAggregateVersion", event.aggregateVersion());
 
-        jdbcTemplate.update(sql, params);
+        int rowsAffected = jdbcTemplate.update(sql, params);
+        if (rowsAffected == 0) {
+            String checkPolicySql = "SELECT COUNT(*) FROM reporting_policy_read_models WHERE policy_id = :policyId";
+            Integer count = jdbcTemplate.queryForObject(checkPolicySql, new MapSqlParameterSource("policyId", event.aggregateId()), Integer.class);
+            if (count != null && count == 0) {
+                throw new IllegalStateException("Policy read-model not found. Commission configuration event must be retried after Policy creation.");
+            }
+        }
     }
 }

@@ -83,7 +83,7 @@ class ReportingPersistenceTest {
         assertThat(((Number) row.get("premium")).doubleValue()).isEqualTo(1000.00);
         assertThat(row.get("status")).isEqualTo("DRAFT");
         assertThat(((Number) row.get("policy_aggregate_version")).longValue()).isEqualTo(1L);
-        assertThat(((Number) row.get("commission_aggregate_version")).longValue()).isEqualTo(0L);
+        assertThat(((Number) row.get("commission_aggregate_version")).longValue()).isEqualTo(-1L);
     }
 
     @Test
@@ -333,8 +333,10 @@ class ReportingPersistenceTest {
                 policyId, 1L, "CONFIGURED", "PERCENTAGE", new BigDecimal("150.00"), new BigDecimal("100.00"), new BigDecimal("50.00")
         );
 
-        // This should run silently without throwing an exception, and 0 rows should be updated.
-        persistenceAdapter.saveCommissionConfiguredEvent(event);
+        // This should throw an IllegalStateException to trigger retry
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> persistenceAdapter.saveCommissionConfiguredEvent(event))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Policy read-model not found");
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT * FROM reporting_policy_read_models WHERE policy_id = ?", policyId);
         assertThat(rows).isEmpty(); // Verifies no placeholder row was created
