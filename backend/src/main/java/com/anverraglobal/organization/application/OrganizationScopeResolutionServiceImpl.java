@@ -36,11 +36,23 @@ public class OrganizationScopeResolutionServiceImpl implements OrganizationScope
         }
 
         OrganizationPersistencePort.OrganizationMembershipDto membership = memberships.get(0);
-        return resolveMembership(membership, identityId);
+        return resolveMembership(membership, identityId, role);
     }
 
-    private OrganizationScope resolveMembership(OrganizationPersistencePort.OrganizationMembershipDto membership, UUID originalIdentityId) {
+    private OrganizationScope resolveMembership(OrganizationPersistencePort.OrganizationMembershipDto membership, UUID originalIdentityId, String jwtRole) {
         String dbRole = membership.getRole();
+        
+        // Strip ROLE_ prefix from jwtRole to compare with dbRole
+        String normalizedJwtRole = jwtRole.startsWith("ROLE_") ? jwtRole.substring(5) : jwtRole;
+        
+        // Ensure the JWT role matches the DB role, or if JWT role is USER, DB role must be DATA_ENTRY
+        boolean isMatch = normalizedJwtRole.equals(dbRole) || 
+                          ("USER".equals(normalizedJwtRole) && "DATA_ENTRY".equals(dbRole));
+                          
+        if (!isMatch) {
+            // Role mismatch resolves to empty scope
+            return OrganizationScope.empty(originalIdentityId);
+        }
 
         switch (dbRole) {
             case "CUSTOMER":
@@ -59,13 +71,13 @@ public class OrganizationScopeResolutionServiceImpl implements OrganizationScope
                 List<UUID> branchIds = persistencePort.findBranchIdsByDealer(membership.getDealerId());
                 return OrganizationScope.forDealer(originalIdentityId, new HashSet<>(branchIds));
             case "DATA_ENTRY":
-                return resolveDataEntry(membership, originalIdentityId);
+                return resolveDataEntry(membership, originalIdentityId, jwtRole);
             default:
                 throw new AccessDeniedException("Unsupported organization membership role: " + dbRole);
         }
     }
 
-    private OrganizationScope resolveDataEntry(OrganizationPersistencePort.OrganizationMembershipDto dataEntryMembership, UUID originalIdentityId) {
+    private OrganizationScope resolveDataEntry(OrganizationPersistencePort.OrganizationMembershipDto dataEntryMembership, UUID originalIdentityId, String jwtRole) {
         if (dataEntryMembership.getParentIdentityId() == null) {
             throw new AccessDeniedException("Data Entry membership is missing parent_identity_id");
         }
@@ -87,8 +99,12 @@ public class OrganizationScopeResolutionServiceImpl implements OrganizationScope
             throw new AccessDeniedException("Data Entry parent must be AGENT or BRANCH_ADMIN. Found: " + parentDbRole);
         }
 
+        // We must pass a valid JWT role to the parent's resolution to pass the security check. 
+        // We synthesize the corresponding role prefix for the parent.
+        String synthesizedParentJwtRole = "ROLE_" + parentDbRole;
+
         // Resolve the parent's scope using the parent's own identity to construct the base sets
-        OrganizationScope parentScope = resolveMembership(parentMembership, parentMembership.getIdentityId());
+        OrganizationScope parentScope = resolveMembership(parentMembership, parentMembership.getIdentityId(), synthesizedParentJwtRole);
 
         // Construct Data Entry scope inheriting exactly the parent's boundaries, but for the Data Entry's identity
         return new OrganizationScope(

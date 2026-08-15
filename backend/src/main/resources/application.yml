@@ -12,3 +12,9 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+
+anverra:
+  security:
+    oauth2:
+      issuer-uri: ${AUTH0_ISSUER_URI:https://dev-tenant.us.auth0.com/}
+      audience: ${AUTH0_AUDIENCE:anverra-api}
