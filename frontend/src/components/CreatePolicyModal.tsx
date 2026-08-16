@@ -3,12 +3,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useCreatePolicy } from '../api/endpoints/policy-controller/policy-controller';
+import { useListCustomers } from '../api/endpoints/customer-controller/customer-controller';
 import { ApiErrorAlert } from './ApiErrorAlert';
 import { X } from 'lucide-react';
 
 const schema = z.object({
   policyNumber: z.string().min(1, 'Policy number is required'),
-  customerId: z.string().uuid('Must be a valid UUID'),
+  customerId: z.string().uuid('Customer is required'),
   agentAId: z.string().uuid('Must be a valid UUID'),
   agentBId: z.string().uuid('Must be a valid UUID'),
   branchId: z.string().uuid('Must be a valid UUID'),
@@ -24,6 +25,11 @@ interface Props {
 export const CreatePolicyModal: React.FC<Props> = ({ onClose, onSuccess }) => {
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema)
+  });
+
+  const { data: customersData, isLoading: isLoadingCustomers, error: customersError } = useListCustomers({
+    status: 'ACTIVE',
+    pageable: { page: 0, size: 100 } // Fetch enough for the dropdown
   });
 
   const { mutateAsync: createPolicy, isPending, error } = useCreatePolicy();
@@ -58,8 +64,23 @@ export const CreatePolicyModal: React.FC<Props> = ({ onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="customerId" className="form-label">Customer ID (UUID)</label>
-              <input id="customerId" type="text" className="form-input" {...register('customerId')} />
+              <label htmlFor="customerId" className="form-label">Customer</label>
+              {isLoadingCustomers ? (
+                <div className="text-sm text-muted py-2">Loading customers...</div>
+              ) : customersError ? (
+                <div className="text-sm text-danger py-2">Error loading customers</div>
+              ) : customersData?.data?.content?.length === 0 ? (
+                <div className="text-sm text-muted py-2">No active customers available.</div>
+              ) : (
+                <select id="customerId" className="form-input" {...register('customerId')}>
+                  <option value="">Select a customer...</option>
+                  {customersData?.data?.content?.map(customer => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.name} ({customer.customerType})
+                    </option>
+                  ))}
+                </select>
+              )}
               {errors.customerId && <div className="form-error">{errors.customerId.message}</div>}
             </div>
 

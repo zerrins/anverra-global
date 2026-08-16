@@ -1,6 +1,7 @@
 package com.anverraglobal.policy.application;
 
 import com.anverraglobal.commission.contracts.CommissionManagementService;
+import com.anverraglobal.customer.contracts.CustomerVerificationContract;
 import com.anverraglobal.organization.contracts.OrganizationScopeResolutionService;
 import com.anverraglobal.organization.contracts.dto.OrganizationScope;
 import com.anverraglobal.policy.domain.Policy;
@@ -30,20 +31,28 @@ public class PolicyManagementApplicationService {
     private final PolicyRepositoryPort policyRepositoryPort;
     private final ApplicationEventPublisher eventPublisher;
     private final OrganizationScopeResolutionService scopeResolutionService;
+    private final CustomerVerificationContract customerVerificationContract;
 
     public PolicyManagementApplicationService(CommissionManagementService commissionManagementService,
                                               PolicyRepositoryPort policyRepositoryPort,
                                               ApplicationEventPublisher eventPublisher,
-                                              OrganizationScopeResolutionService scopeResolutionService) {
+                                              OrganizationScopeResolutionService scopeResolutionService,
+                                              CustomerVerificationContract customerVerificationContract) {
         this.commissionManagementService = commissionManagementService;
         this.policyRepositoryPort = policyRepositoryPort;
         this.eventPublisher = eventPublisher;
         this.scopeResolutionService = scopeResolutionService;
+        this.customerVerificationContract = customerVerificationContract;
     }
 
     @Transactional
     public Policy createPolicy(UUID identityId, String role, String policyNumber, UUID customerId, UUID agentAId, UUID agentBId, UUID branchId) {
         OrganizationScope scope = scopeResolutionService.resolveScope(identityId, role);
+        
+        if (customerId == null) {
+            throw new IllegalArgumentException("customerId is required for new Policy");
+        }
+        customerVerificationContract.verifyCustomerActiveAndInScope(customerId, scope);
         
         Policy policy = Policy.createDraft(policyNumber, identityId, customerId, agentAId, agentBId, branchId);
         
@@ -77,15 +86,18 @@ public class PolicyManagementApplicationService {
         OrganizationScope scope = scopeResolutionService.resolveScope(identityId, role);
         Policy policy = getScopedPolicy(policyId, scope);
         
-        // Wait, domain model has no direct setters for customerId, agentAId, etc in the previous snippet, 
-        // Let's create a new Policy instance with updated fields or add setters if they existed.
-        // Actually, let's look at Policy.java. It doesn't have setters. We need to create a new instance with the same ID and Version.
+        UUID newCustomerId = customerId != null ? customerId : policy.getCustomerId();
+        
+        if (newCustomerId != null && !newCustomerId.equals(policy.getCustomerId())) {
+            customerVerificationContract.verifyCustomerActiveAndInScope(newCustomerId, scope);
+        }
+        
         Policy updatedPolicy = new Policy(
             policy.getPolicyId(),
             policy.getPolicyNumber(),
             policy.getCreatedBy(),
             policy.getCreatedAt(),
-            customerId != null ? customerId : policy.getCustomerId(),
+            newCustomerId,
             agentAId != null ? agentAId : policy.getAgentAId(),
             agentBId != null ? agentBId : policy.getAgentBId(),
             branchId != null ? branchId : policy.getBranchId(),

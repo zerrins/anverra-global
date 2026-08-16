@@ -54,6 +54,9 @@ public class PolicyApiTest {
     @org.springframework.boot.test.mock.mockito.MockBean
     private com.anverraglobal.organization.contracts.OrganizationScopeResolutionService scopeResolutionService;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.anverraglobal.customer.contracts.CustomerVerificationContract customerVerificationContract;
+
 
     private final UUID testIdentityId = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private final UUID testCustomerId = UUID.fromString("22222222-2222-2222-2222-222222222222");
@@ -64,6 +67,7 @@ public class PolicyApiTest {
         policyRepository.deleteAll();
         org.mockito.Mockito.when(scopeResolutionService.resolveScope(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(new com.anverraglobal.organization.contracts.dto.OrganizationScope(testIdentityId, null, null, null, true, false));
+        org.mockito.Mockito.doNothing().when(customerVerificationContract).verifyCustomerActiveAndInScope(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
     }
 
     private PolicyEntity insertTestPolicy(String number, String status) {

@@ -35,27 +35,44 @@ export const handlers = [
       last: true,
     });
   }),
-  http.get('http://localhost:8080/api/v1/customers', () => {
+  http.get('http://localhost:8080/api/v1/customers', ({ request }) => {
+    const url = new URL(request.url);
+    const statusFilter = url.searchParams.get('status');
+
+    let content = [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Acme Corp',
+        customerType: 'ORGANIZATION',
+        status: 'ACTIVE',
+        contactInfo: 'contact@acme.com',
+        businessInfo: 'Business stuff'
+      },
+      {
+        id: '223e4567-e89b-12d3-a456-426614174000',
+        name: 'John Doe',
+        customerType: 'INDIVIDUAL',
+        status: 'ACTIVE',
+        contactInfo: 'john@doe.com',
+        individualInfo: 'Individual stuff'
+      },
+      {
+        id: '323e4567-e89b-12d3-a456-426614174000',
+        name: 'Inactive Inc',
+        customerType: 'ORGANIZATION',
+        status: 'INACTIVE',
+        contactInfo: 'inactive@inc.com',
+        businessInfo: 'Closed'
+      }
+    ];
+
+    if (statusFilter) {
+      content = content.filter(c => c.status === statusFilter);
+    }
+
     return HttpResponse.json({
-      content: [
-        {
-          id: 'cust-1',
-          name: 'Acme Corp',
-          customerType: 'ORGANIZATION',
-          status: 'ACTIVE',
-          contactInfo: 'contact@acme.com',
-          businessInfo: 'Business stuff'
-        },
-        {
-          id: 'cust-2',
-          name: 'John Doe',
-          customerType: 'INDIVIDUAL',
-          status: 'ACTIVE',
-          contactInfo: 'john@doe.com',
-          individualInfo: 'Individual stuff'
-        }
-      ],
-      totalElements: 2,
+      content,
+      totalElements: content.length,
       totalPages: 1,
       number: 0,
       first: true,

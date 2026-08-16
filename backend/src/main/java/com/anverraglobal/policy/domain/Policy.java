@@ -38,6 +38,9 @@ public class Policy {
     // Factory for new draft policy
     public static Policy createDraft(String policyNumber, UUID createdBy, UUID customerId, 
                                      UUID agentAId, UUID agentBId, UUID branchId) {
+        if (customerId == null) {
+            throw new IllegalArgumentException("Customer ID must not be null for new policies");
+        }
         if (agentAId == null && agentBId != null) {
             throw new IllegalArgumentException("Agent A must be populated before Agent B");
         }

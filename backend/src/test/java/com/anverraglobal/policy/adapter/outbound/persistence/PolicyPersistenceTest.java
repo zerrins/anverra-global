@@ -68,6 +68,27 @@ class PolicyPersistenceTest {
     }
 
     @Test
+    void testSaveAndLoadLegacyPolicyWithNullCustomer() {
+        PolicyEntity entity = new PolicyEntity();
+        UUID policyId = UUID.randomUUID();
+        entity.setId(policyId);
+        entity.setPolicyNumber("POL-LEGACY-NULL");
+        entity.setCreatedBy(UUID.randomUUID());
+        entity.setCreatedAt(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+        entity.setCustomerId(null); // legacy policy
+        entity.setPremium(new BigDecimal("500.0000"));
+        entity.setStatus("DRAFT");
+        entity.setVersion(null);
+
+        PolicyEntity saved = policyRepository.save(entity);
+        assertThat(saved.getVersion()).isNotNull();
+
+        PolicyEntity loaded = policyRepository.findById(policyId).orElseThrow();
+        assertThat(loaded.getCustomerId()).isNull();
+        assertThat(loaded.getPolicyNumber()).isEqualTo("POL-LEGACY-NULL");
+    }
+
+    @Test
     void testOptimisticLocking() {
         PolicyEntity entity = new PolicyEntity();
         UUID policyId = UUID.randomUUID();

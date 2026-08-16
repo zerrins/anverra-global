@@ -1,6 +1,7 @@
 package com.anverraglobal.policy.application;
 
 import com.anverraglobal.commission.contracts.CommissionManagementService;
+import com.anverraglobal.customer.contracts.CustomerVerificationContract;
 import com.anverraglobal.organization.contracts.OrganizationScopeResolutionService;
 import com.anverraglobal.organization.contracts.dto.OrganizationScope;
 import com.anverraglobal.policy.application.port.outbound.PolicyRepositoryPort;
@@ -40,6 +41,9 @@ class PolicyManagementApplicationServiceTest {
     @Mock
     private OrganizationScopeResolutionService scopeResolutionService;
 
+    @Mock
+    private CustomerVerificationContract customerVerificationContract;
+
     private PolicyManagementApplicationService policyService;
 
     private UUID identityId = UUID.randomUUID();
@@ -50,7 +54,7 @@ class PolicyManagementApplicationServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         policyService = new PolicyManagementApplicationService(
-                commissionManagementService, policyRepositoryPort, eventPublisher, scopeResolutionService);
+                commissionManagementService, policyRepositoryPort, eventPublisher, scopeResolutionService, customerVerificationContract);
         
         when(scopeResolutionService.resolveScope(identityId, role)).thenReturn(globalScope);
         
@@ -59,13 +63,17 @@ class PolicyManagementApplicationServiceTest {
     }
 
     @Test
-    void createPolicy_ShouldPublishPolicyCreatedEvent() {
+    void createPolicy_ShouldPublishPolicyCreatedEvent_WhenCustomerIsVerified() {
         String policyNumber = "POL-123";
         UUID customerId = UUID.randomUUID();
         UUID agentAId = UUID.randomUUID();
 
+        // Simulate successful verification
+        doNothing().when(customerVerificationContract).verifyCustomerActiveAndInScope(customerId, globalScope);
+
         policyService.createPolicy(identityId, role, policyNumber, customerId, agentAId, null, null);
 
+        verify(customerVerificationContract).verifyCustomerActiveAndInScope(customerId, globalScope);
         verify(policyRepositoryPort).save(any(Policy.class));
         
         ArgumentCaptor<PolicyCreatedEvent> captor = ArgumentCaptor.forClass(PolicyCreatedEvent.class);
@@ -76,6 +84,74 @@ class PolicyManagementApplicationServiceTest {
         assertThat(event.customerId()).isEqualTo(customerId);
         assertThat(event.agentAId()).isEqualTo(agentAId);
         assertThat(event.policyStatus()).isEqualTo("DRAFT");
+    }
+
+    @Test
+    void createPolicy_ShouldThrowException_WhenCustomerIdIsNull() {
+        assertThatThrownBy(() -> policyService.createPolicy(identityId, role, "POL-123", null, UUID.randomUUID(), null, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("customerId is required for new Policy");
+    }
+
+    @Test
+    void createPolicy_ShouldThrowException_WhenCustomerVerificationFails() {
+        UUID customerId = UUID.randomUUID();
+        
+        doThrow(new IllegalStateException("Customer is not ACTIVE"))
+                .when(customerVerificationContract).verifyCustomerActiveAndInScope(customerId, globalScope);
+
+        assertThatThrownBy(() -> policyService.createPolicy(identityId, role, "POL-123", customerId, UUID.randomUUID(), null, null))
+                .isInstanceOf(IllegalStateException.class);
+                
+        verify(policyRepositoryPort, never()).save(any());
+    }
+
+    @Test
+    void updatePolicy_ShouldVerifyCustomer_WhenCustomerIdChanges() {
+        UUID policyId = UUID.randomUUID();
+        UUID oldCustomerId = UUID.randomUUID();
+        UUID newCustomerId = UUID.randomUUID();
+        
+        Policy policy = new Policy(policyId, "POL-123", identityId, java.time.Instant.now(), oldCustomerId, null, null, null, java.math.BigDecimal.ZERO, PolicyStatus.DRAFT, 0L);
+        when(policyRepositoryPort.findByIdAndScope(policyId, globalScope)).thenReturn(Optional.of(policy));
+        
+        doNothing().when(customerVerificationContract).verifyCustomerActiveAndInScope(newCustomerId, globalScope);
+        
+        policyService.updatePolicy(identityId, role, policyId, newCustomerId, null, null, null);
+        
+        verify(customerVerificationContract).verifyCustomerActiveAndInScope(newCustomerId, globalScope);
+        verify(policyRepositoryPort).save(any(Policy.class));
+    }
+
+    @Test
+    void updatePolicy_ShouldNotVerifyCustomer_WhenCustomerIdIsUnchanged() {
+        UUID policyId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
+        
+        Policy policy = new Policy(policyId, "POL-123", identityId, java.time.Instant.now(), customerId, null, null, null, java.math.BigDecimal.ZERO, PolicyStatus.DRAFT, 0L);
+        when(policyRepositoryPort.findByIdAndScope(policyId, globalScope)).thenReturn(Optional.of(policy));
+        
+        policyService.updatePolicy(identityId, role, policyId, customerId, null, null, null);
+        
+        verify(customerVerificationContract, never()).verifyCustomerActiveAndInScope(any(), any());
+        verify(policyRepositoryPort).save(any(Policy.class));
+    }
+
+    @Test
+    void updatePolicy_ShouldSupportLegacyNullCustomer_WhenCustomerIdPassedIsNull() {
+        UUID policyId = UUID.randomUUID();
+        // Legacy policy with null customer
+        Policy policy = new Policy(policyId, "POL-123", identityId, java.time.Instant.now(), null, UUID.randomUUID(), null, null, java.math.BigDecimal.ZERO, PolicyStatus.DRAFT, 0L);
+        when(policyRepositoryPort.findByIdAndScope(policyId, globalScope)).thenReturn(Optional.of(policy));
+        
+        // Pass null customerId to keep it null
+        policyService.updatePolicy(identityId, role, policyId, null, null, null, null);
+        
+        verify(customerVerificationContract, never()).verifyCustomerActiveAndInScope(any(), any());
+        
+        ArgumentCaptor<Policy> captor = ArgumentCaptor.forClass(Policy.class);
+        verify(policyRepositoryPort).save(captor.capture());
+        assertThat(captor.getValue().getCustomerId()).isNull();
     }
 
     @Test
