@@ -60,6 +60,9 @@ public class PolicyApiTest {
     @org.springframework.boot.test.mock.mockito.MockBean
     private com.anverraglobal.insurer.contracts.InsurerVerificationContract insurerVerificationContract;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.anverraglobal.product.contracts.ProductVerificationContract productVerificationContract;
+
 
     private final UUID testIdentityId = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private final UUID testCustomerId = UUID.fromString("22222222-2222-2222-2222-222222222222");
@@ -72,6 +75,7 @@ public class PolicyApiTest {
                 .thenReturn(new com.anverraglobal.organization.contracts.dto.OrganizationScope(testIdentityId, null, null, null, true, false));
         org.mockito.Mockito.doNothing().when(customerVerificationContract).verifyCustomerActiveAndInScope(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
         org.mockito.Mockito.doNothing().when(insurerVerificationContract).verifyInsurerActive(org.mockito.ArgumentMatchers.any());
+        org.mockito.Mockito.doNothing().when(productVerificationContract).verifyProductActive(org.mockito.ArgumentMatchers.any());
     }
 
     private PolicyEntity insertTestPolicy(String number, String status) {
@@ -96,6 +100,7 @@ public class PolicyApiTest {
                     "policyNumber": "POL-CREATE",
                     "customerId": "22222222-2222-2222-2222-222222222222",
                     "insurerId": "55555555-5555-5555-5555-555555555555",
+                    "productId": "77777777-7777-7777-7777-777777777777",
                     "agentAId": null,
                     "agentBId": null,
                     "branchId": "44444444-4444-4444-4444-444444444444"
@@ -194,6 +199,10 @@ public class PolicyApiTest {
     void shouldActivatePolicy() throws Exception {
         PolicyEntity policy = insertTestPolicy("POL-ACT", "DRAFT");
         policy.setInsurerId(UUID.randomUUID());
+        policy.setProductId(UUID.randomUUID());
+        policy.setEffectiveDate(java.time.LocalDate.of(2025, 1, 1));
+        policy.setExpiryDate(java.time.LocalDate.of(2026, 1, 1));
+        policy.setSumAssured(new BigDecimal("50000.00"));
         policyRepository.save(policy);
 
         mockMvc.perform(post("/api/v1/policies/" + policy.getId() + "/lifecycle/activate")
@@ -218,6 +227,10 @@ public class PolicyApiTest {
     void shouldReactivatePolicy() throws Exception {
         PolicyEntity policy = insertTestPolicy("POL-REACT", "INACTIVE");
         policy.setInsurerId(UUID.randomUUID());
+        policy.setProductId(UUID.randomUUID());
+        policy.setEffectiveDate(java.time.LocalDate.of(2025, 1, 1));
+        policy.setExpiryDate(java.time.LocalDate.of(2026, 1, 1));
+        policy.setSumAssured(new BigDecimal("50000.00"));
         policyRepository.save(policy);
 
         mockMvc.perform(post("/api/v1/policies/" + policy.getId() + "/lifecycle/reactivate")

@@ -6,6 +6,7 @@ import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Table("policies")
@@ -18,12 +19,16 @@ public class PolicyEntity {
     private Instant createdAt;
     private UUID customerId;
     private UUID insurerId;
+    private UUID productId;
     private UUID agentAId;
     private UUID agentBId;
     private UUID branchId;
     private BigDecimal premium;
+    private LocalDate effectiveDate;
+    private LocalDate expiryDate;
+    private BigDecimal sumAssured;
     private String status;
-    
+
     @Version
     private Long version;
 
@@ -40,6 +45,8 @@ public class PolicyEntity {
     public void setCustomerId(UUID customerId) { this.customerId = customerId; }
     public UUID getInsurerId() { return insurerId; }
     public void setInsurerId(UUID insurerId) { this.insurerId = insurerId; }
+    public UUID getProductId() { return productId; }
+    public void setProductId(UUID productId) { this.productId = productId; }
     public UUID getAgentAId() { return agentAId; }
     public void setAgentAId(UUID agentAId) { this.agentAId = agentAId; }
     public UUID getAgentBId() { return agentBId; }
@@ -48,6 +55,12 @@ public class PolicyEntity {
     public void setBranchId(UUID branchId) { this.branchId = branchId; }
     public BigDecimal getPremium() { return premium; }
     public void setPremium(BigDecimal premium) { this.premium = premium; }
+    public LocalDate getEffectiveDate() { return effectiveDate; }
+    public void setEffectiveDate(LocalDate effectiveDate) { this.effectiveDate = effectiveDate; }
+    public LocalDate getExpiryDate() { return expiryDate; }
+    public void setExpiryDate(LocalDate expiryDate) { this.expiryDate = expiryDate; }
+    public BigDecimal getSumAssured() { return sumAssured; }
+    public void setSumAssured(BigDecimal sumAssured) { this.sumAssured = sumAssured; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public Long getVersion() { return version; }

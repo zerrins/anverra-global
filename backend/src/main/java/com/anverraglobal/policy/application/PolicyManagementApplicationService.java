@@ -13,6 +13,7 @@ import com.anverraglobal.policy.event.PolicyDeactivatedEvent;
 import com.anverraglobal.policy.event.PolicyPremiumUpdatedEvent;
 import com.anverraglobal.policy.event.PolicyReactivatedEvent;
 import com.anverraglobal.policy.application.port.outbound.PolicyRepositoryPort;
+import com.anverraglobal.product.contracts.ProductVerificationContract;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,46 +36,60 @@ public class PolicyManagementApplicationService {
     private final OrganizationScopeResolutionService scopeResolutionService;
     private final CustomerVerificationContract customerVerificationContract;
     private final InsurerVerificationContract insurerVerificationContract;
+    private final ProductVerificationContract productVerificationContract;
 
     public PolicyManagementApplicationService(CommissionManagementService commissionManagementService,
                                               PolicyRepositoryPort policyRepositoryPort,
                                               ApplicationEventPublisher eventPublisher,
                                               OrganizationScopeResolutionService scopeResolutionService,
                                               CustomerVerificationContract customerVerificationContract,
-                                              InsurerVerificationContract insurerVerificationContract) {
+                                              InsurerVerificationContract insurerVerificationContract,
+                                              ProductVerificationContract productVerificationContract) {
         this.commissionManagementService = commissionManagementService;
         this.policyRepositoryPort = policyRepositoryPort;
         this.eventPublisher = eventPublisher;
         this.scopeResolutionService = scopeResolutionService;
         this.customerVerificationContract = customerVerificationContract;
         this.insurerVerificationContract = insurerVerificationContract;
+        this.productVerificationContract = productVerificationContract;
     }
 
     @Transactional
-    public Policy createPolicy(UUID identityId, String role, String policyNumber, UUID customerId, UUID insurerId, UUID agentAId, UUID agentBId, UUID branchId) {
+    public Policy createPolicy(UUID identityId, String role, String policyNumber,
+                               UUID customerId, UUID insurerId, UUID productId,
+                               UUID agentAId, UUID agentBId, UUID branchId) {
         OrganizationScope scope = scopeResolutionService.resolveScope(identityId, role);
-        
+
         if (customerId == null) {
             throw new IllegalArgumentException("customerId is required for new Policy");
         }
         customerVerificationContract.verifyCustomerActiveAndInScope(customerId, scope);
-        
+
         if (insurerId != null) {
             insurerVerificationContract.verifyInsurerActive(insurerId);
         }
-        
-        Policy policy = Policy.createDraft(policyNumber, identityId, customerId, insurerId, agentAId, agentBId, branchId);
-        
+
+        // productId is required for new policies (REQ-DEC-011 §6)
+        if (productId == null) {
+            throw new IllegalArgumentException("productId is required for new Policy");
+        }
+        productVerificationContract.verifyProductActive(productId);
+
+        Policy policy = Policy.createDraft(policyNumber, identityId, customerId, insurerId, productId,
+                agentAId, agentBId, branchId);
+
         assertScope(scope, policy);
 
         Policy saved = policyRepositoryPort.save(policy);
-        
+
         PolicyCreatedEvent event = PolicyCreatedEvent.create(
-                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(), 
-                saved.getCustomerId(), saved.getAgentAId(), saved.getAgentBId(), 
-                saved.getBranchId(), saved.getStatus().name(), saved.getPremium());
+                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(),
+                saved.getCustomerId(), saved.getProductId(),
+                saved.getAgentAId(), saved.getAgentBId(),
+                saved.getBranchId(), saved.getStatus().name(), saved.getPremium(),
+                saved.getEffectiveDate(), saved.getExpiryDate(), saved.getSumAssured());
         eventPublisher.publishEvent(event);
-        
+
         return saved;
     }
 
@@ -90,22 +106,42 @@ public class PolicyManagementApplicationService {
     }
 
     @Transactional
-    public Policy updatePolicy(UUID identityId, String role, UUID policyId, UUID customerId, UUID insurerId, UUID agentAId, UUID agentBId, UUID branchId) {
+    public Policy updatePolicy(UUID identityId, String role, UUID policyId,
+                               UUID customerId, UUID insurerId, UUID productId,
+                               UUID agentAId, UUID agentBId, UUID branchId,
+                               LocalDate effectiveDate, LocalDate expiryDate, BigDecimal sumAssured) {
         OrganizationScope scope = scopeResolutionService.resolveScope(identityId, role);
         Policy policy = getScopedPolicy(policyId, scope);
-        
+
         UUID newCustomerId = customerId != null ? customerId : policy.getCustomerId();
-        
+
         if (newCustomerId != null && !newCustomerId.equals(policy.getCustomerId())) {
             customerVerificationContract.verifyCustomerActiveAndInScope(newCustomerId, scope);
         }
-        
+
         UUID newInsurerId = insurerId != null ? insurerId : policy.getInsurerId();
-        
+
         if (newInsurerId != null && !newInsurerId.equals(policy.getInsurerId())) {
             insurerVerificationContract.verifyInsurerActive(newInsurerId);
         }
-        
+
+        UUID newProductId = productId != null ? productId : policy.getProductId();
+
+        // Verify product if it changed (HD-2: product changes must still pass verification)
+        if (newProductId != null && !newProductId.equals(policy.getProductId())) {
+            productVerificationContract.verifyProductActive(newProductId);
+        }
+
+        // Resolve dates and sumAssured (null means keep existing)
+        LocalDate newEffectiveDate = effectiveDate != null ? effectiveDate : policy.getEffectiveDate();
+        LocalDate newExpiryDate = expiryDate != null ? expiryDate : policy.getExpiryDate();
+        BigDecimal newSumAssured = sumAssured != null ? sumAssured : policy.getSumAssured();
+
+        // Validate date invariant if both dates are now set
+        if (newEffectiveDate != null && newExpiryDate != null && !newEffectiveDate.isBefore(newExpiryDate)) {
+            throw new IllegalArgumentException("Effective date must be before expiry date");
+        }
+
         Policy updatedPolicy = new Policy(
             policy.getPolicyId(),
             policy.getPolicyNumber(),
@@ -113,16 +149,20 @@ public class PolicyManagementApplicationService {
             policy.getCreatedAt(),
             newCustomerId,
             newInsurerId,
+            newProductId,
             agentAId != null ? agentAId : policy.getAgentAId(),
             agentBId != null ? agentBId : policy.getAgentBId(),
             branchId != null ? branchId : policy.getBranchId(),
             policy.getPremium(),
+            newEffectiveDate,
+            newExpiryDate,
+            newSumAssured,
             policy.getStatus(),
             policy.getVersion()
         );
-        
-        assertScope(scope, updatedPolicy); // ensure they didn't move it out of their scope
-        
+
+        assertScope(scope, updatedPolicy);
+
         return policyRepositoryPort.save(updatedPolicy);
     }
 
@@ -143,15 +183,22 @@ public class PolicyManagementApplicationService {
         }
         insurerVerificationContract.verifyInsurerActive(policy.getInsurerId());
 
+        // Verify product is still active at activation time (REQ-DEC-011 §7)
+        if (policy.getProductId() != null) {
+            productVerificationContract.verifyProductActive(policy.getProductId());
+        }
+
         boolean authoritativeCommissionStatus = commissionManagementService.isCommissionConfigured(policyId);
         policy.activate(authoritativeCommissionStatus);
-        
+
         Policy saved = policyRepositoryPort.save(policy);
-        
+
         PolicyActivatedEvent event = PolicyActivatedEvent.create(
-                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(), 
-                saved.getCustomerId(), saved.getAgentAId(), saved.getAgentBId(), 
-                saved.getBranchId(), saved.getStatus().name(), saved.getPremium());
+                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(),
+                saved.getCustomerId(), saved.getProductId(),
+                saved.getAgentAId(), saved.getAgentBId(),
+                saved.getBranchId(), saved.getStatus().name(), saved.getPremium(),
+                saved.getEffectiveDate(), saved.getExpiryDate(), saved.getSumAssured());
         eventPublisher.publishEvent(event);
     }
 
@@ -161,13 +208,15 @@ public class PolicyManagementApplicationService {
         Policy policy = getScopedPolicy(policyId, scope);
 
         policy.deactivate();
-        
+
         Policy saved = policyRepositoryPort.save(policy);
-        
+
         PolicyDeactivatedEvent event = PolicyDeactivatedEvent.create(
-                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(), 
-                saved.getCustomerId(), saved.getAgentAId(), saved.getAgentBId(), 
-                saved.getBranchId(), saved.getStatus().name(), saved.getPremium());
+                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(),
+                saved.getCustomerId(), saved.getProductId(),
+                saved.getAgentAId(), saved.getAgentBId(),
+                saved.getBranchId(), saved.getStatus().name(), saved.getPremium(),
+                saved.getEffectiveDate(), saved.getExpiryDate(), saved.getSumAssured());
         eventPublisher.publishEvent(event);
     }
 
@@ -181,15 +230,22 @@ public class PolicyManagementApplicationService {
         }
         insurerVerificationContract.verifyInsurerActive(policy.getInsurerId());
 
+        // Verify product is still active at reactivation time
+        if (policy.getProductId() != null) {
+            productVerificationContract.verifyProductActive(policy.getProductId());
+        }
+
         boolean authoritativeCommissionStatus = commissionManagementService.isCommissionConfigured(policyId);
         policy.activate(authoritativeCommissionStatus);
-        
+
         Policy saved = policyRepositoryPort.save(policy);
-        
+
         PolicyReactivatedEvent event = PolicyReactivatedEvent.create(
-                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(), 
-                saved.getCustomerId(), saved.getAgentAId(), saved.getAgentBId(), 
-                saved.getBranchId(), saved.getStatus().name(), saved.getPremium());
+                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(),
+                saved.getCustomerId(), saved.getProductId(),
+                saved.getAgentAId(), saved.getAgentBId(),
+                saved.getBranchId(), saved.getStatus().name(), saved.getPremium(),
+                saved.getEffectiveDate(), saved.getExpiryDate(), saved.getSumAssured());
         eventPublisher.publishEvent(event);
     }
 
@@ -197,31 +253,35 @@ public class PolicyManagementApplicationService {
     public void updatePremium(UUID policyId, BigDecimal newPremium) {
         Policy policy = policyRepositoryPort.findById(policyId)
                 .orElseThrow(() -> new NoSuchElementException("Policy not found: " + policyId));
-        
+
         policy.updatePremium(newPremium);
-        
+
         Policy saved = policyRepositoryPort.save(policy);
 
         commissionManagementService.resetToUnset(policyId);
 
         PolicyPremiumUpdatedEvent event = PolicyPremiumUpdatedEvent.create(
-                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(), 
-                saved.getCustomerId(), saved.getAgentAId(), saved.getAgentBId(), 
-                saved.getBranchId(), saved.getStatus().name(), saved.getPremium());
-        
+                saved.getPolicyId(), saved.getVersion(), saved.getPolicyNumber(),
+                saved.getCustomerId(), saved.getProductId(),
+                saved.getAgentAId(), saved.getAgentBId(),
+                saved.getBranchId(), saved.getStatus().name(), saved.getPremium(),
+                saved.getEffectiveDate(), saved.getExpiryDate(), saved.getSumAssured());
+
         eventPublisher.publishEvent(event);
     }
 
-    public void configureCommission(UUID identityId, String role, UUID policyId, String commissionType, BigDecimal totalCommissionValue, BigDecimal agentAShare, BigDecimal agentBShare) {
+    public void configureCommission(UUID identityId, String role, UUID policyId,
+                                    String commissionType, BigDecimal totalCommissionValue,
+                                    BigDecimal agentAShare, BigDecimal agentBShare) {
         OrganizationScope scope = scopeResolutionService.resolveScope(identityId, role);
         Policy policy = getScopedPolicy(policyId, scope);
-        
+
         commissionManagementService.configureCommission(
-                policyId, 
-                commissionType, 
-                totalCommissionValue, 
-                agentAShare, 
-                agentBShare, 
+                policyId,
+                commissionType,
+                totalCommissionValue,
+                agentAShare,
+                agentBShare,
                 policy.getPremium()
         );
     }

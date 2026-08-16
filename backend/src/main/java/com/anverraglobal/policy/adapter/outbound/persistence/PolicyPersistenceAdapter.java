@@ -29,10 +29,14 @@ public class PolicyPersistenceAdapter implements PolicyRepositoryPort {
         entity.setCreatedAt(policy.getCreatedAt());
         entity.setCustomerId(policy.getCustomerId());
         entity.setInsurerId(policy.getInsurerId());
+        entity.setProductId(policy.getProductId());
         entity.setAgentAId(policy.getAgentAId());
         entity.setAgentBId(policy.getAgentBId());
         entity.setBranchId(policy.getBranchId());
         entity.setPremium(policy.getPremium());
+        entity.setEffectiveDate(policy.getEffectiveDate());
+        entity.setExpiryDate(policy.getExpiryDate());
+        entity.setSumAssured(policy.getSumAssured());
         entity.setStatus(policy.getStatus().name());
         entity.setVersion(policy.getVersion());
 
@@ -105,10 +109,14 @@ public class PolicyPersistenceAdapter implements PolicyRepositoryPort {
                 entity.getCreatedAt(),
                 entity.getCustomerId(),
                 entity.getInsurerId(),
+                entity.getProductId(),
                 entity.getAgentAId(),
                 entity.getAgentBId(),
                 entity.getBranchId(),
                 entity.getPremium(),
+                entity.getEffectiveDate(),
+                entity.getExpiryDate(),
+                entity.getSumAssured(),
                 PolicyStatus.valueOf(entity.getStatus()),
                 entity.getVersion()
         );

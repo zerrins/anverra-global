@@ -24,6 +24,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -64,11 +65,15 @@ class ReportingPersistenceTest {
     void testPolicyCreatedEventPersistsRow() {
         UUID policyId = UUID.randomUUID();
         UUID customerId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
         UUID agentAId = UUID.randomUUID();
         UUID branchId = UUID.randomUUID();
+        LocalDate effectiveDate = LocalDate.of(2025, 1, 1);
+        LocalDate expiryDate = LocalDate.of(2026, 1, 1);
 
         PolicyCreatedEvent event = PolicyCreatedEvent.create(
-                policyId, 1L, "POL-001", customerId, agentAId, null, branchId, "DRAFT", new BigDecimal("1000.00")
+                policyId, 1L, "POL-001", customerId, productId, agentAId, null, branchId, "DRAFT", new BigDecimal("1000.00"),
+                effectiveDate, expiryDate, new BigDecimal("50000.00")
         );
 
         persistenceAdapter.savePolicyCreatedEvent(event);
@@ -78,29 +83,62 @@ class ReportingPersistenceTest {
         Map<String, Object> row = rows.get(0);
         assertThat(row.get("policy_number")).isEqualTo("POL-001");
         assertThat(row.get("customer_id")).isEqualTo(customerId);
+        assertThat(row.get("product_id")).isEqualTo(productId);
         assertThat(row.get("agent_a_id")).isEqualTo(agentAId);
         assertThat(row.get("branch_id")).isEqualTo(branchId);
         assertThat(((Number) row.get("premium")).doubleValue()).isEqualTo(1000.00);
         assertThat(row.get("status")).isEqualTo("DRAFT");
         assertThat(((Number) row.get("policy_aggregate_version")).longValue()).isEqualTo(1L);
         assertThat(((Number) row.get("commission_aggregate_version")).longValue()).isEqualTo(-1L);
+        assertThat(((java.sql.Date) row.get("effective_date")).toLocalDate()).isEqualTo(effectiveDate);
+        assertThat(((java.sql.Date) row.get("expiry_date")).toLocalDate()).isEqualTo(expiryDate);
+        assertThat(((Number) row.get("sum_assured")).doubleValue()).isEqualTo(50000.00);
+    }
+
+    @Test
+    void testPolicyCreatedEventPersistsRowWithNullOptionalFields() {
+        UUID policyId = UUID.randomUUID();
+        UUID customerId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+
+        // Legacy-safe: effectiveDate, expiryDate, sumAssured all null for DRAFT
+        PolicyCreatedEvent event = PolicyCreatedEvent.create(
+                policyId, 1L, "POL-001", customerId, productId, null, null, null, "DRAFT", new BigDecimal("0.00"),
+                null, null, null
+        );
+
+        persistenceAdapter.savePolicyCreatedEvent(event);
+
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT * FROM reporting_policy_read_models WHERE policy_id = ?", policyId);
+        assertThat(rows).hasSize(1);
+        Map<String, Object> row = rows.get(0);
+        assertThat(row.get("effective_date")).isNull();
+        assertThat(row.get("expiry_date")).isNull();
+        assertThat(row.get("sum_assured")).isNull();
+        assertThat(row.get("product_id")).isEqualTo(productId);
     }
 
     @Test
     void testPolicyLifecycleEventsUpdateStatus() {
         UUID policyId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        LocalDate effectiveDate = LocalDate.of(2025, 1, 1);
+        LocalDate expiryDate = LocalDate.of(2026, 1, 1);
         createPolicy(policyId, "DRAFT", new BigDecimal("1000.00"), 1L);
 
         persistenceAdapter.savePolicyActivatedEvent(PolicyActivatedEvent.create(
-                policyId, 2L, "POL-001", UUID.randomUUID(), null, null, null, "ACTIVE", new BigDecimal("1000.00")));
+                policyId, 2L, "POL-001", UUID.randomUUID(), productId, null, null, null, "ACTIVE", new BigDecimal("1000.00"),
+                effectiveDate, expiryDate, new BigDecimal("50000.00")));
         assertStatus(policyId, "ACTIVE", 2L);
 
         persistenceAdapter.savePolicyDeactivatedEvent(PolicyDeactivatedEvent.create(
-                policyId, 3L, "POL-001", UUID.randomUUID(), null, null, null, "INACTIVE", new BigDecimal("1000.00")));
+                policyId, 3L, "POL-001", UUID.randomUUID(), productId, null, null, null, "INACTIVE", new BigDecimal("1000.00"),
+                effectiveDate, expiryDate, new BigDecimal("50000.00")));
         assertStatus(policyId, "INACTIVE", 3L);
 
         persistenceAdapter.savePolicyReactivatedEvent(PolicyReactivatedEvent.create(
-                policyId, 4L, "POL-001", UUID.randomUUID(), null, null, null, "ACTIVE", new BigDecimal("1000.00")));
+                policyId, 4L, "POL-001", UUID.randomUUID(), productId, null, null, null, "ACTIVE", new BigDecimal("1000.00"),
+                effectiveDate, expiryDate, new BigDecimal("50000.00")));
         assertStatus(policyId, "ACTIVE", 4L);
     }
 
@@ -110,7 +148,8 @@ class ReportingPersistenceTest {
         createPolicy(policyId, "ACTIVE", new BigDecimal("1000.00"), 1L);
 
         persistenceAdapter.savePolicyPremiumUpdatedEvent(PolicyPremiumUpdatedEvent.create(
-                policyId, 2L, "POL-001", UUID.randomUUID(), null, null, null, "ACTIVE", new BigDecimal("1200.00")
+                policyId, 2L, "POL-001", UUID.randomUUID(), null, null, null, null, "ACTIVE", new BigDecimal("1200.00"),
+                null, null, null
         ));
 
         Map<String, Object> row = jdbcTemplate.queryForMap("SELECT * FROM reporting_policy_read_models WHERE policy_id = ?", policyId);
@@ -142,10 +181,12 @@ class ReportingPersistenceTest {
     @Test
     void testOutdatedPolicyEventIsIgnored() {
         UUID policyId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
         createPolicy(policyId, "DRAFT", new BigDecimal("1000.00"), 5L);
 
         persistenceAdapter.savePolicyActivatedEvent(PolicyActivatedEvent.create(
-                policyId, 4L, "POL-001", UUID.randomUUID(), null, null, null, "ACTIVE", new BigDecimal("1000.00")));
+                policyId, 4L, "POL-001", UUID.randomUUID(), productId, null, null, null, "ACTIVE", new BigDecimal("1000.00"),
+                null, null, null));
         
         // Status should remain DRAFT because incoming version 4 < existing version 5
         assertStatus(policyId, "DRAFT", 5L);
@@ -278,7 +319,8 @@ class ReportingPersistenceTest {
         persistenceAdapter.saveCommissionConfiguredEvent(initialCommission);
 
         PolicyPremiumUpdatedEvent premiumEvent = PolicyPremiumUpdatedEvent.create(
-                policyId, 6L, "POL-001", UUID.randomUUID(), null, null, null, "ACTIVE", new BigDecimal("1200.00")
+                policyId, 6L, "POL-001", UUID.randomUUID(), null, null, null, null, "ACTIVE", new BigDecimal("1200.00"),
+                null, null, null
         );
         
         CommissionConfiguredEvent unsetCommission = CommissionConfiguredEvent.create(
@@ -308,7 +350,8 @@ class ReportingPersistenceTest {
         persistenceAdapter.saveCommissionConfiguredEvent(initialCommission);
 
         PolicyPremiumUpdatedEvent premiumEvent = PolicyPremiumUpdatedEvent.create(
-                policyId, 6L, "POL-001", UUID.randomUUID(), null, null, null, "ACTIVE", new BigDecimal("1200.00")
+                policyId, 6L, "POL-001", UUID.randomUUID(), null, null, null, null, "ACTIVE", new BigDecimal("1200.00"),
+                null, null, null
         );
         
         CommissionConfiguredEvent unsetCommission = CommissionConfiguredEvent.create(
@@ -347,7 +390,8 @@ class ReportingPersistenceTest {
         UUID policyId = UUID.randomUUID();
         
         PolicyCreatedEvent event = PolicyCreatedEvent.create(
-                policyId, 1L, "POL-001", UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00")
+                policyId, 1L, "POL-001", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT",
+                new BigDecimal("1000.00"), null, null, null
         );
 
         // First execution
@@ -380,9 +424,12 @@ class ReportingPersistenceTest {
         
         assertThat(row1).isEqualTo(row2); // State remains completely unchanged
     }
+
     private void createPolicy(UUID policyId, String status, BigDecimal premium, Long version, UUID customerId, UUID agentAId, UUID branchId) {
         PolicyCreatedEvent event = PolicyCreatedEvent.create(
-                policyId, version, "POL-" + policyId.toString().substring(0, 5), customerId, agentAId, null, branchId, status, premium
+                policyId, version, "POL-" + policyId.toString().substring(0, 5),
+                customerId, UUID.randomUUID(), agentAId, null, branchId, status, premium,
+                null, null, null
         );
         persistenceAdapter.savePolicyCreatedEvent(event);
     }

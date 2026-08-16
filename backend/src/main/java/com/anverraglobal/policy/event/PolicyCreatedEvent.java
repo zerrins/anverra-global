@@ -2,6 +2,7 @@ package com.anverraglobal.policy.event;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 public record PolicyCreatedEvent(
@@ -12,16 +13,22 @@ public record PolicyCreatedEvent(
         Long aggregateVersion,
         String policyNumber,
         UUID customerId,
+        UUID productId,
         UUID agentAId,
         UUID agentBId,
         UUID branchId,
         String policyStatus,
-        BigDecimal premiumAmount
+        BigDecimal premiumAmount,
+        LocalDate effectiveDate,
+        LocalDate expiryDate,
+        BigDecimal sumAssured
 ) {
     public static PolicyCreatedEvent create(
-            UUID policyId, Long aggregateVersion, String policyNumber, 
-            UUID customerId, UUID agentAId, UUID agentBId, UUID branchId, 
-            String policyStatus, BigDecimal premiumAmount) {
+            UUID policyId, Long aggregateVersion, String policyNumber,
+            UUID customerId, UUID productId,
+            UUID agentAId, UUID agentBId, UUID branchId,
+            String policyStatus, BigDecimal premiumAmount,
+            LocalDate effectiveDate, LocalDate expiryDate, BigDecimal sumAssured) {
         return new PolicyCreatedEvent(
                 UUID.randomUUID(),
                 1,
@@ -30,11 +37,15 @@ public record PolicyCreatedEvent(
                 aggregateVersion,
                 policyNumber,
                 customerId,
+                productId,
                 agentAId,
                 agentBId,
                 branchId,
                 policyStatus,
-                premiumAmount
+                premiumAmount,
+                effectiveDate,
+                expiryDate,
+                sumAssured
         );
     }
 }

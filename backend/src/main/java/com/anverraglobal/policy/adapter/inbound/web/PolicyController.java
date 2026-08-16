@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
 
@@ -29,7 +30,10 @@ public class PolicyController {
             @RequestBody CreatePolicyRequest request) {
         UUID identityId = extractIdentityId(principal);
         String role = extractRole(principal);
-        Policy policy = policyService.createPolicy(identityId, role, request.policyNumber(), request.customerId(), request.insurerId(), request.agentAId(), request.agentBId(), request.branchId());
+        Policy policy = policyService.createPolicy(
+                identityId, role, request.policyNumber(),
+                request.customerId(), request.insurerId(), request.productId(),
+                request.agentAId(), request.agentBId(), request.branchId());
         return ResponseEntity.status(HttpStatus.CREATED).body(mapToResponse(policy));
     }
 
@@ -60,7 +64,11 @@ public class PolicyController {
             @RequestBody UpdatePolicyRequest request) {
         UUID identityId = extractIdentityId(principal);
         String role = extractRole(principal);
-        Policy policy = policyService.updatePolicy(identityId, role, policyId, request.customerId(), request.insurerId(), request.agentAId(), request.agentBId(), request.branchId());
+        Policy policy = policyService.updatePolicy(
+                identityId, role, policyId,
+                request.customerId(), request.insurerId(), request.productId(),
+                request.agentAId(), request.agentBId(), request.branchId(),
+                request.effectiveDate(), request.expiryDate(), request.sumAssured());
         return ResponseEntity.ok(mapToResponse(policy));
     }
 
@@ -165,19 +173,23 @@ public class PolicyController {
                 policy.getPolicyNumber(),
                 policy.getCustomerId(),
                 policy.getInsurerId(),
+                policy.getProductId(),
                 policy.getAgentAId(),
                 policy.getAgentBId(),
                 policy.getBranchId(),
                 policy.getPremium(),
+                policy.getEffectiveDate(),
+                policy.getExpiryDate(),
+                policy.getSumAssured(),
                 policy.getStatus().name()
         );
     }
 
-    public record CreatePolicyRequest(String policyNumber, UUID customerId, UUID insurerId, UUID agentAId, UUID agentBId, UUID branchId) {}
-    public record UpdatePolicyRequest(UUID customerId, UUID insurerId, UUID agentAId, UUID agentBId, UUID branchId) {}
+    public record CreatePolicyRequest(String policyNumber, UUID customerId, UUID insurerId, UUID productId, UUID agentAId, UUID agentBId, UUID branchId) {}
+    public record UpdatePolicyRequest(UUID customerId, UUID insurerId, UUID productId, UUID agentAId, UUID agentBId, UUID branchId, LocalDate effectiveDate, LocalDate expiryDate, BigDecimal sumAssured) {}
     public record UpdatePremiumRequest(BigDecimal premium) {}
     public record ResolvePolicyRequest(String policyNumber) {}
     public record LifecycleRequest(boolean isCommissionConfigured) {}
     public record ConfigureCommissionRequest(String commissionType, BigDecimal totalCommissionValue, BigDecimal agentAShare, BigDecimal agentBShare) {}
-    public record PolicyResponse(UUID policyId, String policyNumber, UUID customerId, UUID insurerId, UUID agentAId, UUID agentBId, UUID branchId, BigDecimal premium, String status) {}
+    public record PolicyResponse(UUID policyId, String policyNumber, UUID customerId, UUID insurerId, UUID productId, UUID agentAId, UUID agentBId, UUID branchId, BigDecimal premium, LocalDate effectiveDate, LocalDate expiryDate, BigDecimal sumAssured, String status) {}
 }

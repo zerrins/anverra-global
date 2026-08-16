@@ -14,9 +14,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.util.UUID;
-import java.util.Set;
 
 @Component
 public class ReportingPersistenceAdapter implements ReportingOutboundPort {
@@ -95,18 +93,24 @@ public class ReportingPersistenceAdapter implements ReportingOutboundPort {
     public void savePolicyCreatedEvent(PolicyCreatedEvent event) {
         String sql = """
             INSERT INTO reporting_policy_read_models (
-                policy_id, policy_number, customer_id, agent_a_id, agent_b_id, branch_id, 
-                premium, status, policy_aggregate_version, commission_aggregate_version
+                policy_id, policy_number, customer_id, product_id, agent_a_id, agent_b_id, branch_id, 
+                premium, effective_date, expiry_date, sum_assured, status,
+                policy_aggregate_version, commission_aggregate_version
             ) VALUES (
-                :policyId, :policyNumber, :customerId, :agentAId, :agentBId, :branchId, 
-                :premium, :status, :policyAggregateVersion, -1
+                :policyId, :policyNumber, :customerId, :productId, :agentAId, :agentBId, :branchId, 
+                :premium, :effectiveDate, :expiryDate, :sumAssured, :status,
+                :policyAggregateVersion, -1
             ) ON CONFLICT (policy_id) DO UPDATE SET
                 policy_number = EXCLUDED.policy_number,
                 customer_id = EXCLUDED.customer_id,
+                product_id = EXCLUDED.product_id,
                 agent_a_id = EXCLUDED.agent_a_id,
                 agent_b_id = EXCLUDED.agent_b_id,
                 branch_id = EXCLUDED.branch_id,
                 premium = EXCLUDED.premium,
+                effective_date = EXCLUDED.effective_date,
+                expiry_date = EXCLUDED.expiry_date,
+                sum_assured = EXCLUDED.sum_assured,
                 status = EXCLUDED.status,
                 policy_aggregate_version = EXCLUDED.policy_aggregate_version
             WHERE reporting_policy_read_models.policy_aggregate_version < EXCLUDED.policy_aggregate_version
@@ -116,10 +120,14 @@ public class ReportingPersistenceAdapter implements ReportingOutboundPort {
                 .addValue("policyId", event.aggregateId())
                 .addValue("policyNumber", event.policyNumber())
                 .addValue("customerId", event.customerId())
+                .addValue("productId", event.productId())
                 .addValue("agentAId", event.agentAId())
                 .addValue("agentBId", event.agentBId())
                 .addValue("branchId", event.branchId())
                 .addValue("premium", event.premiumAmount())
+                .addValue("effectiveDate", event.effectiveDate())
+                .addValue("expiryDate", event.expiryDate())
+                .addValue("sumAssured", event.sumAssured())
                 .addValue("status", event.policyStatus())
                 .addValue("policyAggregateVersion", event.aggregateVersion());
                 
@@ -128,23 +136,32 @@ public class ReportingPersistenceAdapter implements ReportingOutboundPort {
 
     @Override
     public void savePolicyActivatedEvent(PolicyActivatedEvent event) {
-        updatePolicyStatusAndVersion(event.aggregateId(), "ACTIVE", event.aggregateVersion());
+        updatePolicyStatusAndFinancials(event.aggregateId(), event.policyStatus(), event.aggregateVersion(),
+                event.productId(), event.effectiveDate(), event.expiryDate(), event.sumAssured());
     }
 
     @Override
     public void savePolicyDeactivatedEvent(PolicyDeactivatedEvent event) {
-        updatePolicyStatusAndVersion(event.aggregateId(), "INACTIVE", event.aggregateVersion());
+        updatePolicyStatusAndFinancials(event.aggregateId(), event.policyStatus(), event.aggregateVersion(),
+                event.productId(), event.effectiveDate(), event.expiryDate(), event.sumAssured());
     }
 
     @Override
     public void savePolicyReactivatedEvent(PolicyReactivatedEvent event) {
-        updatePolicyStatusAndVersion(event.aggregateId(), "ACTIVE", event.aggregateVersion());
+        updatePolicyStatusAndFinancials(event.aggregateId(), event.policyStatus(), event.aggregateVersion(),
+                event.productId(), event.effectiveDate(), event.expiryDate(), event.sumAssured());
     }
 
-    private void updatePolicyStatusAndVersion(UUID policyId, String status, Long aggregateVersion) {
+    private void updatePolicyStatusAndFinancials(UUID policyId, String status, Long aggregateVersion,
+            UUID productId, java.time.LocalDate effectiveDate, java.time.LocalDate expiryDate,
+            java.math.BigDecimal sumAssured) {
         String sql = """
             UPDATE reporting_policy_read_models SET
                 status = :status,
+                product_id = :productId,
+                effective_date = :effectiveDate,
+                expiry_date = :expiryDate,
+                sum_assured = :sumAssured,
                 policy_aggregate_version = :policyAggregateVersion
             WHERE policy_id = :policyId 
               AND policy_aggregate_version < :policyAggregateVersion
@@ -153,6 +170,10 @@ public class ReportingPersistenceAdapter implements ReportingOutboundPort {
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("policyId", policyId)
                 .addValue("status", status)
+                .addValue("productId", productId)
+                .addValue("effectiveDate", effectiveDate)
+                .addValue("expiryDate", expiryDate)
+                .addValue("sumAssured", sumAssured)
                 .addValue("policyAggregateVersion", aggregateVersion);
                 
         jdbcTemplate.update(sql, params);

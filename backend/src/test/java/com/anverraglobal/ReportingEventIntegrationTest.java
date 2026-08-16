@@ -65,7 +65,8 @@ class ReportingEventIntegrationTest {
         UUID policyId = UUID.randomUUID();
         
         PolicyCreatedEvent policyEvent = PolicyCreatedEvent.create(
-                policyId, 1L, "POL-INT-1", UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00")
+                policyId, 1L, "POL-INT-1", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00"),
+                null, null, null
         );
         CommissionConfiguredEvent commissionEvent = CommissionConfiguredEvent.create(
                 policyId, 0L, "CONFIGURED", "PERCENTAGE", new BigDecimal("100.00"), new BigDecimal("50.00"), new BigDecimal("50.00")
@@ -100,7 +101,8 @@ class ReportingEventIntegrationTest {
         );
         
         PolicyCreatedEvent policyEvent = PolicyCreatedEvent.create(
-                policyId, 1L, "POL-INT-B", UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00")
+                policyId, 1L, "POL-INT-B", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00"),
+                null, null, null
         );
 
         // 1. Publish commission event first (out of order)
@@ -165,7 +167,8 @@ class ReportingEventIntegrationTest {
     void testDuplicateCommissionEvent() {
         UUID policyId = UUID.randomUUID();
         PolicyCreatedEvent policyEvent = PolicyCreatedEvent.create(
-                policyId, 1L, "POL-INT-DUP", UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00")
+                policyId, 1L, "POL-INT-DUP", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00"),
+                null, null, null
         );
         transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(policyEvent));
 
@@ -198,7 +201,8 @@ class ReportingEventIntegrationTest {
     void testStaleCommissionEvent() {
         UUID policyId = UUID.randomUUID();
         PolicyCreatedEvent policyEvent = PolicyCreatedEvent.create(
-                policyId, 1L, "POL-INT-STALE", UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00")
+                policyId, 1L, "POL-INT-STALE", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00"),
+                null, null, null
         );
         transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(policyEvent));
         
@@ -248,7 +252,8 @@ class ReportingEventIntegrationTest {
 
         // Publish the policy to allow the Commission event to succeed
         PolicyCreatedEvent policyEvent = PolicyCreatedEvent.create(
-                policyId, 1L, "POL-INT-FLT", UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00")
+                policyId, 1L, "POL-INT-FLT", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00"),
+                null, null, null
         );
         transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(policyEvent));
         
@@ -267,7 +272,8 @@ class ReportingEventIntegrationTest {
         UUID dummyId = UUID.fromString("00000000-0000-0000-0000-000000000000");
         
         com.anverraglobal.policy.event.PolicyDeactivatedEvent unrelatedEvent = com.anverraglobal.policy.event.PolicyDeactivatedEvent.create(
-                dummyId, 1L, "POL-DUMMY-1", UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "INACTIVE", new BigDecimal("1000.00")
+                dummyId, 1L, "POL-DUMMY-1", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "INACTIVE", new BigDecimal("1000.00"),
+                null, null, null
         );
         
         // Publish it so the intentional exception leaves it incomplete
@@ -323,7 +329,8 @@ class ReportingEventIntegrationTest {
         
         // Publish policy so that if the event were retried, it would succeed.
         PolicyCreatedEvent policyEvent = PolicyCreatedEvent.create(
-                policyId, 1L, "POL-AGE-24", UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00")
+                policyId, 1L, "POL-AGE-24", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "DRAFT", new BigDecimal("1000.00"),
+                null, null, null
         );
         transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(policyEvent));
 
@@ -390,7 +397,8 @@ class ReportingEventIntegrationTest {
         
         UUID dummyId = UUID.fromString("11111111-1111-1111-1111-111111111111");
         com.anverraglobal.policy.event.PolicyDeactivatedEvent testEvent = com.anverraglobal.policy.event.PolicyDeactivatedEvent.create(
-                dummyId, 1L, "POL-DUMMY-2", UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "INACTIVE", new BigDecimal("1000.00")
+                dummyId, 1L, "POL-DUMMY-2", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), "INACTIVE", new BigDecimal("1000.00"),
+                null, null, null
         );
         
         transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(testEvent));
