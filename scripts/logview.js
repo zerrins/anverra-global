@@ -541,7 +541,7 @@ const server = http.createServer((req, res) => {
   res.writeHead(404); res.end('Not found');
 });
 
-server.listen(PORT, '127.0.0.1', () => {
+server.listen(PORT, '0.0.0.0', () => {
   const url = `http://localhost:${PORT}`;
   console.log(`\n  AnverraGlobal — Dev Log Viewer`);
   console.log(`  ──────────────────────────────`);

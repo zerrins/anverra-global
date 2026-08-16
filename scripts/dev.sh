@@ -20,12 +20,15 @@ FRONTEND_DIR="${ROOT_DIR}/frontend"
 
 BACKEND_PID_FILE="${ROOT_DIR}/.backend.pid"
 FRONTEND_PID_FILE="${ROOT_DIR}/.frontend.pid"
+LOGS_UI_PID_FILE="${ROOT_DIR}/.logs_ui.pid"
 
 BACKEND_LOG="${ROOT_DIR}/.backend.log"
 FRONTEND_LOG="${ROOT_DIR}/.frontend.log"
+LOGS_UI_LOG="${ROOT_DIR}/.logs_ui.log"
 
 BACKEND_PORT=8080
 FRONTEND_PORT=5173
+LOGS_UI_PORT=9999
 
 # ── Colour helpers ──────────────────────────────────────────
 RED='\033[0;31m'
@@ -112,7 +115,7 @@ start_frontend() {
   info "Starting Vite dev server on :${FRONTEND_PORT} …"
   (
     cd "$FRONTEND_DIR"
-    npm run dev -- --port "${FRONTEND_PORT}" \
+    npm run dev -- --port "${FRONTEND_PORT}" --host \
       > "$FRONTEND_LOG" 2>&1 &
     echo $! > "$FRONTEND_PID_FILE"
   )
@@ -154,14 +157,48 @@ cmd_status() {
     print "  ${RED}○${RESET} Frontend  stopped"
   fi
 
+  if _is_running "$LOGS_UI_PID_FILE"; then
+    print "  ${GREEN}●${RESET} Logs UI   running  PID=$(_read_pid "$LOGS_UI_PID_FILE")  http://localhost:${LOGS_UI_PORT}"
+  else
+    print "  ${RED}○${RESET} Logs UI   stopped"
+  fi
+
   print ""
 }
 
 # ── Log UI ──────────────────────────────────────────────────
+start_logs_ui() {
+  if _is_running "$LOGS_UI_PID_FILE"; then
+    warn "Logs UI already running (PID $(_read_pid "$LOGS_UI_PID_FILE"))"
+    return
+  fi
+
+  info "Starting log viewer UI on port ${LOGS_UI_PORT} …"
+  node "${SCRIPT_DIR}/logview.js" "${LOGS_UI_PORT}" > "$LOGS_UI_LOG" 2>&1 &
+  echo $! > "$LOGS_UI_PID_FILE"
+  success "Logs UI starting → PID $(_read_pid "$LOGS_UI_PID_FILE")  |  log: ${LOGS_UI_LOG}"
+}
+
+stop_logs_ui() {
+  if ! _is_running "$LOGS_UI_PID_FILE"; then
+    warn "Logs UI is not running"
+    rm -f "$LOGS_UI_PID_FILE"
+    return
+  fi
+
+  local pid
+  pid=$(cat "$LOGS_UI_PID_FILE")
+  info "Stopping logs UI (PID ${pid}) …"
+  kill "$pid" 2>/dev/null || true
+  sleep 1
+  kill -9 "$pid" 2>/dev/null || true
+  rm -f "$LOGS_UI_PID_FILE"
+  success "Logs UI stopped"
+}
+
 cmd_logs_ui() {
-  local port="${1:-9999}"
-  info "Starting log viewer UI on http://localhost:${port} …"
-  node "${SCRIPT_DIR}/logview.js" "${port}"
+  info "Logs UI should now be running in the background. Use 'dev.sh start logs-ui' or 'dev.sh start all' to start it."
+  info "Access it at http://localhost:${LOGS_UI_PORT}"
 }
 
 cmd_logs() {
@@ -185,8 +222,9 @@ cmd_start() {
   case "$target" in
     backend)  start_backend ;;
     frontend) start_frontend ;;
-    all)      start_backend ; start_frontend ;;
-    *) error "Unknown target: ${target}. Use backend | frontend | all" ; exit 1 ;;
+    logs-ui)  start_logs_ui ;;
+    all)      start_backend ; start_frontend ; start_logs_ui ;;
+    *) error "Unknown target: ${target}. Use backend | frontend | logs-ui | all" ; exit 1 ;;
   esac
 }
 
@@ -195,8 +233,9 @@ cmd_stop() {
   case "$target" in
     backend)  stop_backend ;;
     frontend) stop_frontend ;;
-    all)      stop_frontend ; stop_backend ;;
-    *) error "Unknown target: ${target}. Use backend | frontend | all" ; exit 1 ;;
+    logs-ui)  stop_logs_ui ;;
+    all)      stop_frontend ; stop_backend ; stop_logs_ui ;;
+    *) error "Unknown target: ${target}. Use backend | frontend | logs-ui | all" ; exit 1 ;;
   esac
 }
 

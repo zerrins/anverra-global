@@ -51,6 +51,7 @@ The following identifiers represent requirements-resolution questions awaiting h
 - [REQ-DEC-008 (Web UX Requirements)](decisions/REQ-DEC-008-web-ux.md)
 - `REQ-DEC-009` - Mobile UX Requirements
   - *Traceability Matrix: [Phase 5 Traceability](decisions/REQ-DEC-007-traceability.md)*
+- [REQ-DEC-011 (Customer & Product Implementation Contract)](decisions/REQ-DEC-011-customer-product-contract.md)
 
 ### Pending Decisions
 
@@ -68,7 +69,7 @@ The current repository assessment has identified:
 - **REQ-DEC-008 (Web UX Requirements)** is AUTHORITATIVE and RESOLVED.
 - All other capabilities have **ZERO AUTHORITATIVE FUNCTIONAL REQUIREMENTS**.
 
-Existing Phase 1–5 architecture remains authoritative for architecture. Existing Workstream 1 and Workstream 2 implementation foundations remain valid. Functional capability implementation remains gated by the availability of authoritative requirements. Identity & Access is NOT fully implementation-ready because the authorization model, JWT claims, and roles/permissions remain unresolved. Customer is NOT fully implementation-ready because exact attributes, persistence, API, events, and UI remain unresolved. Product is NOT fully implementation-ready because pricing, coverage, exact attributes, API, events, and UI remain unresolved.
+Existing Phase 1–5 architecture remains authoritative for architecture. Existing Workstream 1 and Workstream 2 implementation foundations remain valid. Functional capability implementation remains gated by the availability of authoritative requirements. Identity & Access contract is frozen via REQ-DEC-010. Customer and Product implementation contracts are fully frozen and implementation-ready via REQ-DEC-011.
 
 ## Requirements Workflow
 1. Discover existing evidence.

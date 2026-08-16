@@ -1,0 +1,14 @@
+package com.anverraglobal.product.domain;
+
+public enum ProductCategory {
+    LIFE_INSURANCE,
+    HEALTH_INSURANCE,
+    MOTOR_INSURANCE,
+    TRAVEL_INSURANCE,
+    PROPERTY_INSURANCE,
+    FIRE_INSURANCE,
+    MARINE_INSURANCE,
+    LIABILITY_INSURANCE,
+    ENGINEERING_INSURANCE,
+    COMMERCIAL_INSURANCE
+}
