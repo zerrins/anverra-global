@@ -29,7 +29,7 @@ public class PolicyController {
             @RequestBody CreatePolicyRequest request) {
         UUID identityId = extractIdentityId(principal);
         String role = extractRole(principal);
-        Policy policy = policyService.createPolicy(identityId, role, request.policyNumber(), request.customerId(), request.agentAId(), request.agentBId(), request.branchId());
+        Policy policy = policyService.createPolicy(identityId, role, request.policyNumber(), request.customerId(), request.insurerId(), request.agentAId(), request.agentBId(), request.branchId());
         return ResponseEntity.status(HttpStatus.CREATED).body(mapToResponse(policy));
     }
 
@@ -60,7 +60,7 @@ public class PolicyController {
             @RequestBody UpdatePolicyRequest request) {
         UUID identityId = extractIdentityId(principal);
         String role = extractRole(principal);
-        Policy policy = policyService.updatePolicy(identityId, role, policyId, request.customerId(), request.agentAId(), request.agentBId(), request.branchId());
+        Policy policy = policyService.updatePolicy(identityId, role, policyId, request.customerId(), request.insurerId(), request.agentAId(), request.agentBId(), request.branchId());
         return ResponseEntity.ok(mapToResponse(policy));
     }
 
@@ -164,6 +164,7 @@ public class PolicyController {
                 policy.getPolicyId(),
                 policy.getPolicyNumber(),
                 policy.getCustomerId(),
+                policy.getInsurerId(),
                 policy.getAgentAId(),
                 policy.getAgentBId(),
                 policy.getBranchId(),
@@ -172,11 +173,11 @@ public class PolicyController {
         );
     }
 
-    public record CreatePolicyRequest(String policyNumber, UUID customerId, UUID agentAId, UUID agentBId, UUID branchId) {}
-    public record UpdatePolicyRequest(UUID customerId, UUID agentAId, UUID agentBId, UUID branchId) {}
+    public record CreatePolicyRequest(String policyNumber, UUID customerId, UUID insurerId, UUID agentAId, UUID agentBId, UUID branchId) {}
+    public record UpdatePolicyRequest(UUID customerId, UUID insurerId, UUID agentAId, UUID agentBId, UUID branchId) {}
     public record UpdatePremiumRequest(BigDecimal premium) {}
     public record ResolvePolicyRequest(String policyNumber) {}
     public record LifecycleRequest(boolean isCommissionConfigured) {}
     public record ConfigureCommissionRequest(String commissionType, BigDecimal totalCommissionValue, BigDecimal agentAShare, BigDecimal agentBShare) {}
-    public record PolicyResponse(UUID policyId, String policyNumber, UUID customerId, UUID agentAId, UUID agentBId, UUID branchId, BigDecimal premium, String status) {}
+    public record PolicyResponse(UUID policyId, String policyNumber, UUID customerId, UUID insurerId, UUID agentAId, UUID agentBId, UUID branchId, BigDecimal premium, String status) {}
 }

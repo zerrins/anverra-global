@@ -65,6 +65,31 @@ class PolicyPersistenceTest {
         assertThat(loaded.getPremium()).isEqualTo(new BigDecimal("1234.5600"));
         assertThat(loaded.getStatus()).isEqualTo("DRAFT");
         assertThat(loaded.getVersion()).isEqualTo(saved.getVersion());
+        assertThat(loaded.getInsurerId()).isNull();
+    }
+
+    @Test
+    void testSaveAndLoadPolicyWithInsurer() {
+        PolicyEntity entity = new PolicyEntity();
+        UUID policyId = UUID.randomUUID();
+        UUID insurerId = UUID.randomUUID();
+        entity.setId(policyId);
+        entity.setPolicyNumber("POL-INSURER");
+        entity.setCreatedBy(UUID.randomUUID());
+        entity.setCreatedAt(Instant.now().truncatedTo(ChronoUnit.MILLIS));
+        entity.setCustomerId(UUID.randomUUID());
+        entity.setInsurerId(insurerId);
+        entity.setPremium(new BigDecimal("2345.6700"));
+        entity.setStatus("ACTIVE");
+        entity.setVersion(null);
+
+        PolicyEntity saved = policyRepository.save(entity);
+        
+        assertThat(saved.getVersion()).isNotNull();
+
+        PolicyEntity loaded = policyRepository.findById(policyId).orElseThrow();
+        assertThat(loaded.getPolicyNumber()).isEqualTo("POL-INSURER");
+        assertThat(loaded.getInsurerId()).isEqualTo(insurerId);
     }
 
     @Test
@@ -85,6 +110,7 @@ class PolicyPersistenceTest {
 
         PolicyEntity loaded = policyRepository.findById(policyId).orElseThrow();
         assertThat(loaded.getCustomerId()).isNull();
+        assertThat(loaded.getInsurerId()).isNull();
         assertThat(loaded.getPolicyNumber()).isEqualTo("POL-LEGACY-NULL");
     }
 

@@ -11,6 +11,27 @@ import {
 import { ApiErrorAlert } from '../components/ApiErrorAlert';
 import { ConfigureCommissionModal } from '../components/ConfigureCommissionModal';
 import { ArrowLeft, Play, Square, RefreshCcw, DollarSign } from 'lucide-react';
+import { useGetInsurer } from '../api/endpoints/insurer-controller/insurer-controller';
+
+const InsurerDisplay = ({ insurerId }: { insurerId: string }) => {
+  const { data, isLoading, error } = useGetInsurer(insurerId, {
+    query: {
+      enabled: !!insurerId,
+      staleTime: 5 * 60 * 1000,
+    }
+  });
+
+  if (isLoading) return <span className="text-muted text-sm">Loading...</span>;
+  if (error) return <span className="text-danger text-sm">Error loading</span>;
+  
+  return (
+    <div>
+      <div className="font-semibold">{data?.data?.name || 'Unknown'}</div>
+      <div className="font-mono text-xs text-muted">{insurerId}</div>
+    </div>
+  );
+};
+
 
 const PolicyDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -123,6 +144,14 @@ const PolicyDetails = () => {
             <div>
               <div className="text-sm text-muted">Customer ID</div>
               <div className="font-mono text-sm">{policy?.data?.customerId}</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted">Insurer</div>
+              {policy?.data?.insurerId ? (
+                <InsurerDisplay insurerId={policy.data.insurerId} />
+              ) : (
+                <div className="font-medium text-muted-foreground">Not assigned</div>
+              )}
             </div>
             <div>
               <div className="text-sm text-muted">Branch ID</div>

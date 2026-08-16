@@ -4,15 +4,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useCreatePolicy } from '../api/endpoints/policy-controller/policy-controller';
 import { useListCustomers } from '../api/endpoints/customer-controller/customer-controller';
+import { useListInsurers } from '../api/endpoints/insurer-controller/insurer-controller';
 import { ApiErrorAlert } from './ApiErrorAlert';
 import { X } from 'lucide-react';
 
 const schema = z.object({
   policyNumber: z.string().min(1, 'Policy number is required'),
   customerId: z.string().uuid('Customer is required'),
-  agentAId: z.string().uuid('Must be a valid UUID'),
-  agentBId: z.string().uuid('Must be a valid UUID'),
-  branchId: z.string().uuid('Must be a valid UUID'),
+  insurerId: z.string().uuid('Must be a valid UUID').optional().or(z.literal('')),
+  agentAId: z.string().uuid('Must be a valid UUID').optional().or(z.literal('')),
+  agentBId: z.string().uuid('Must be a valid UUID').optional().or(z.literal('')),
+  branchId: z.string().uuid('Must be a valid UUID')
 });
 
 type FormData = z.infer<typeof schema>;
@@ -24,19 +26,33 @@ interface Props {
 
 export const CreatePolicyModal: React.FC<Props> = ({ onClose, onSuccess }) => {
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema)
+    resolver: zodResolver(schema),
+    defaultValues: {
+      insurerId: ''
+    }
   });
 
   const { data: customersData, isLoading: isLoadingCustomers, error: customersError } = useListCustomers({
     status: 'ACTIVE',
-    pageable: { page: 0, size: 100 } // Fetch enough for the dropdown
+    pageable: { page: 0, size: 100 }
+  });
+
+  const { data: insurersData, isLoading: isLoadingInsurers, error: insurersError } = useListInsurers({
+    status: 'ACTIVE',
+    pageable: { page: 0, size: 100 }
   });
 
   const { mutateAsync: createPolicy, isPending, error } = useCreatePolicy();
 
   const onSubmit = async (data: FormData) => {
     try {
-      await createPolicy({ data });
+      const payload = {
+        ...data,
+        insurerId: data.insurerId || undefined,
+        agentAId: data.agentAId || undefined,
+        agentBId: data.agentBId || undefined,
+      };
+      await createPolicy({ data: payload });
       onSuccess();
     } catch {
       // Error handled by ApiErrorAlert
@@ -82,6 +98,27 @@ export const CreatePolicyModal: React.FC<Props> = ({ onClose, onSuccess }) => {
                 </select>
               )}
               {errors.customerId && <div className="form-error">{errors.customerId.message}</div>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="insurerId" className="form-label">Insurer</label>
+              {isLoadingInsurers ? (
+                <div className="text-sm text-muted py-2">Loading insurers...</div>
+              ) : insurersError ? (
+                <div className="text-sm text-danger py-2">Error loading insurers</div>
+              ) : insurersData?.data?.content?.length === 0 ? (
+                <div className="text-sm text-muted py-2">No active insurers available.</div>
+              ) : (
+                <select id="insurerId" className="form-input" {...register('insurerId')}>
+                  <option value="">No insurer selected</option>
+                  {insurersData?.data?.content?.map(insurer => (
+                    <option key={insurer.id} value={insurer.id}>
+                      {insurer.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {errors.insurerId && <div className="form-error">{errors.insurerId.message}</div>}
             </div>
 
             <div className="form-group">

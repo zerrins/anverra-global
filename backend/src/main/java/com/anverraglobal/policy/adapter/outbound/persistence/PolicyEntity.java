@@ -17,6 +17,7 @@ public class PolicyEntity {
     private UUID createdBy;
     private Instant createdAt;
     private UUID customerId;
+    private UUID insurerId;
     private UUID agentAId;
     private UUID agentBId;
     private UUID branchId;
@@ -37,6 +38,8 @@ public class PolicyEntity {
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public UUID getCustomerId() { return customerId; }
     public void setCustomerId(UUID customerId) { this.customerId = customerId; }
+    public UUID getInsurerId() { return insurerId; }
+    public void setInsurerId(UUID insurerId) { this.insurerId = insurerId; }
     public UUID getAgentAId() { return agentAId; }
     public void setAgentAId(UUID agentAId) { this.agentAId = agentAId; }
     public UUID getAgentBId() { return agentBId; }

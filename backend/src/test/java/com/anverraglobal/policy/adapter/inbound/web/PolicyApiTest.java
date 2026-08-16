@@ -57,6 +57,9 @@ public class PolicyApiTest {
     @org.springframework.boot.test.mock.mockito.MockBean
     private com.anverraglobal.customer.contracts.CustomerVerificationContract customerVerificationContract;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.anverraglobal.insurer.contracts.InsurerVerificationContract insurerVerificationContract;
+
 
     private final UUID testIdentityId = UUID.fromString("11111111-1111-1111-1111-111111111111");
     private final UUID testCustomerId = UUID.fromString("22222222-2222-2222-2222-222222222222");
@@ -68,6 +71,7 @@ public class PolicyApiTest {
         org.mockito.Mockito.when(scopeResolutionService.resolveScope(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(new com.anverraglobal.organization.contracts.dto.OrganizationScope(testIdentityId, null, null, null, true, false));
         org.mockito.Mockito.doNothing().when(customerVerificationContract).verifyCustomerActiveAndInScope(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+        org.mockito.Mockito.doNothing().when(insurerVerificationContract).verifyInsurerActive(org.mockito.ArgumentMatchers.any());
     }
 
     private PolicyEntity insertTestPolicy(String number, String status) {
@@ -91,6 +95,7 @@ public class PolicyApiTest {
                 {
                     "policyNumber": "POL-CREATE",
                     "customerId": "22222222-2222-2222-2222-222222222222",
+                    "insurerId": "55555555-5555-5555-5555-555555555555",
                     "agentAId": null,
                     "agentBId": null,
                     "branchId": "44444444-4444-4444-4444-444444444444"
@@ -134,7 +139,8 @@ public class PolicyApiTest {
 
         String requestBody = """
                 {
-                    "customerId": "33333333-3333-3333-3333-333333333333"
+                    "customerId": "33333333-3333-3333-3333-333333333333",
+                    "insurerId": "66666666-6666-6666-6666-666666666666"
                 }
                 """;
 
@@ -143,7 +149,8 @@ public class PolicyApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.customerId").value("33333333-3333-3333-3333-333333333333"));
+                .andExpect(jsonPath("$.customerId").value("33333333-3333-3333-3333-333333333333"))
+                .andExpect(jsonPath("$.insurerId").value("66666666-6666-6666-6666-666666666666"));
     }
 
     @Test
@@ -186,6 +193,8 @@ public class PolicyApiTest {
     @WithMockUser(username = "11111111-1111-1111-1111-111111111111", roles = "ADMIN")
     void shouldActivatePolicy() throws Exception {
         PolicyEntity policy = insertTestPolicy("POL-ACT", "DRAFT");
+        policy.setInsurerId(UUID.randomUUID());
+        policyRepository.save(policy);
 
         mockMvc.perform(post("/api/v1/policies/" + policy.getId() + "/lifecycle/activate")
                         .with(csrf())
@@ -208,6 +217,8 @@ public class PolicyApiTest {
     @WithMockUser(username = "11111111-1111-1111-1111-111111111111", roles = "ADMIN")
     void shouldReactivatePolicy() throws Exception {
         PolicyEntity policy = insertTestPolicy("POL-REACT", "INACTIVE");
+        policy.setInsurerId(UUID.randomUUID());
+        policyRepository.save(policy);
 
         mockMvc.perform(post("/api/v1/policies/" + policy.getId() + "/lifecycle/reactivate")
                         .with(csrf())

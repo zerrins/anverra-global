@@ -116,4 +116,62 @@ export const handlers = [
   http.post('http://localhost:8080/api/v1/customers/:id/lifecycle/deactivate', () => {
     return HttpResponse.json({}, { status: 200 });
   }),
+  http.get('http://localhost:8080/api/v1/insurers', ({ request }) => {
+    const url = new URL(request.url);
+    const statusFilter = url.searchParams.get('status');
+
+    let content = [
+      {
+        id: '444e4567-e89b-12d3-a456-426614174000',
+        name: 'Insurer One',
+        status: 'ACTIVE',
+        version: 1
+      },
+      {
+        id: '555e4567-e89b-12d3-a456-426614174000',
+        name: 'Insurer Two',
+        status: 'ACTIVE',
+        version: 1
+      },
+      {
+        id: '666e4567-e89b-12d3-a456-426614174000',
+        name: 'Inactive Insurer',
+        status: 'INACTIVE',
+        version: 1
+      }
+    ];
+
+    if (statusFilter) {
+      content = content.filter(c => c.status === statusFilter);
+    }
+
+    return HttpResponse.json({
+      content,
+      totalElements: content.length,
+      totalPages: 1,
+      number: 0,
+      first: true,
+      last: true,
+    });
+  }),
+  http.get('http://localhost:8080/api/v1/insurers/:id', ({ params }) => {
+    return HttpResponse.json({
+      id: params.id,
+      name: 'Insurer One',
+      status: 'ACTIVE',
+      version: 1
+    });
+  }),
+  http.post('http://localhost:8080/api/v1/insurers', () => {
+    return HttpResponse.json({ id: 'new-insurer', name: 'New Insurer', status: 'ACTIVE', version: 1 }, { status: 201 });
+  }),
+  http.put('http://localhost:8080/api/v1/insurers/:id', ({ params }) => {
+    return HttpResponse.json({ id: params.id, name: 'Updated Insurer', status: 'ACTIVE', version: 2 });
+  }),
+  http.post('http://localhost:8080/api/v1/insurers/:id/lifecycle/activate', () => {
+    return HttpResponse.json({}, { status: 200 });
+  }),
+  http.post('http://localhost:8080/api/v1/insurers/:id/lifecycle/deactivate', () => {
+    return HttpResponse.json({}, { status: 200 });
+  }),
 ];

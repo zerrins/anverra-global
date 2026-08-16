@@ -7,6 +7,7 @@
 
 export interface UpdatePolicyRequest {
   customerId?: string;
+  insurerId?: string;
   agentAId?: string;
   agentBId?: string;
   branchId?: string;

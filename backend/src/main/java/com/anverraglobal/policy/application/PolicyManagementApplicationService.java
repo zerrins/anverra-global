@@ -2,6 +2,7 @@ package com.anverraglobal.policy.application;
 
 import com.anverraglobal.commission.contracts.CommissionManagementService;
 import com.anverraglobal.customer.contracts.CustomerVerificationContract;
+import com.anverraglobal.insurer.contracts.InsurerVerificationContract;
 import com.anverraglobal.organization.contracts.OrganizationScopeResolutionService;
 import com.anverraglobal.organization.contracts.dto.OrganizationScope;
 import com.anverraglobal.policy.domain.Policy;
@@ -32,21 +33,24 @@ public class PolicyManagementApplicationService {
     private final ApplicationEventPublisher eventPublisher;
     private final OrganizationScopeResolutionService scopeResolutionService;
     private final CustomerVerificationContract customerVerificationContract;
+    private final InsurerVerificationContract insurerVerificationContract;
 
     public PolicyManagementApplicationService(CommissionManagementService commissionManagementService,
                                               PolicyRepositoryPort policyRepositoryPort,
                                               ApplicationEventPublisher eventPublisher,
                                               OrganizationScopeResolutionService scopeResolutionService,
-                                              CustomerVerificationContract customerVerificationContract) {
+                                              CustomerVerificationContract customerVerificationContract,
+                                              InsurerVerificationContract insurerVerificationContract) {
         this.commissionManagementService = commissionManagementService;
         this.policyRepositoryPort = policyRepositoryPort;
         this.eventPublisher = eventPublisher;
         this.scopeResolutionService = scopeResolutionService;
         this.customerVerificationContract = customerVerificationContract;
+        this.insurerVerificationContract = insurerVerificationContract;
     }
 
     @Transactional
-    public Policy createPolicy(UUID identityId, String role, String policyNumber, UUID customerId, UUID agentAId, UUID agentBId, UUID branchId) {
+    public Policy createPolicy(UUID identityId, String role, String policyNumber, UUID customerId, UUID insurerId, UUID agentAId, UUID agentBId, UUID branchId) {
         OrganizationScope scope = scopeResolutionService.resolveScope(identityId, role);
         
         if (customerId == null) {
@@ -54,7 +58,11 @@ public class PolicyManagementApplicationService {
         }
         customerVerificationContract.verifyCustomerActiveAndInScope(customerId, scope);
         
-        Policy policy = Policy.createDraft(policyNumber, identityId, customerId, agentAId, agentBId, branchId);
+        if (insurerId != null) {
+            insurerVerificationContract.verifyInsurerActive(insurerId);
+        }
+        
+        Policy policy = Policy.createDraft(policyNumber, identityId, customerId, insurerId, agentAId, agentBId, branchId);
         
         assertScope(scope, policy);
 
@@ -82,7 +90,7 @@ public class PolicyManagementApplicationService {
     }
 
     @Transactional
-    public Policy updatePolicy(UUID identityId, String role, UUID policyId, UUID customerId, UUID agentAId, UUID agentBId, UUID branchId) {
+    public Policy updatePolicy(UUID identityId, String role, UUID policyId, UUID customerId, UUID insurerId, UUID agentAId, UUID agentBId, UUID branchId) {
         OrganizationScope scope = scopeResolutionService.resolveScope(identityId, role);
         Policy policy = getScopedPolicy(policyId, scope);
         
@@ -92,12 +100,19 @@ public class PolicyManagementApplicationService {
             customerVerificationContract.verifyCustomerActiveAndInScope(newCustomerId, scope);
         }
         
+        UUID newInsurerId = insurerId != null ? insurerId : policy.getInsurerId();
+        
+        if (newInsurerId != null && !newInsurerId.equals(policy.getInsurerId())) {
+            insurerVerificationContract.verifyInsurerActive(newInsurerId);
+        }
+        
         Policy updatedPolicy = new Policy(
             policy.getPolicyId(),
             policy.getPolicyNumber(),
             policy.getCreatedBy(),
             policy.getCreatedAt(),
             newCustomerId,
+            newInsurerId,
             agentAId != null ? agentAId : policy.getAgentAId(),
             agentBId != null ? agentBId : policy.getAgentBId(),
             branchId != null ? branchId : policy.getBranchId(),
@@ -122,6 +137,11 @@ public class PolicyManagementApplicationService {
     public void activatePolicy(UUID identityId, String role, UUID policyId, boolean isCommissionConfigured) {
         OrganizationScope scope = scopeResolutionService.resolveScope(identityId, role);
         Policy policy = getScopedPolicy(policyId, scope);
+
+        if (policy.getInsurerId() == null) {
+            throw new IllegalArgumentException("Policy cannot be activated without an insurer");
+        }
+        insurerVerificationContract.verifyInsurerActive(policy.getInsurerId());
 
         boolean authoritativeCommissionStatus = commissionManagementService.isCommissionConfigured(policyId);
         policy.activate(authoritativeCommissionStatus);
@@ -155,6 +175,11 @@ public class PolicyManagementApplicationService {
     public void reactivatePolicy(UUID identityId, String role, UUID policyId, boolean isCommissionConfigured) {
         OrganizationScope scope = scopeResolutionService.resolveScope(identityId, role);
         Policy policy = getScopedPolicy(policyId, scope);
+
+        if (policy.getInsurerId() == null) {
+            throw new IllegalArgumentException("Policy cannot be reactivated without an insurer");
+        }
+        insurerVerificationContract.verifyInsurerActive(policy.getInsurerId());
 
         boolean authoritativeCommissionStatus = commissionManagementService.isCommissionConfigured(policyId);
         policy.activate(authoritativeCommissionStatus);

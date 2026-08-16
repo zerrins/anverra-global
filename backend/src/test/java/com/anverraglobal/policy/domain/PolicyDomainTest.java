@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PolicyDomainTest {
 
     private Policy createTestPolicy(UUID agentA, UUID agentB) {
-        return Policy.createDraft("POL-123", UUID.randomUUID(), UUID.randomUUID(), agentA, agentB, null);
+        return Policy.createDraft("POL-123", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), agentA, agentB, null);
     }
 
     @Test
@@ -89,7 +89,21 @@ class PolicyDomainTest {
     @Test
     void testAgentOrderValidation() {
         assertThrows(IllegalArgumentException.class, () -> 
-            Policy.createDraft("POL-123", UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), null)
+            Policy.createDraft("POL-123", UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, UUID.randomUUID(), null)
         );
+    }
+
+    @Test
+    void testActivation_MissingInsurer_Prohibited() {
+        Policy policy = Policy.createDraft("POL-123", UUID.randomUUID(), UUID.randomUUID(), null, null, null, null);
+        Exception ex = assertThrows(IllegalStateException.class, () -> policy.activate(false));
+        assertTrue(ex.getMessage().contains("Policy must have an insurer"));
+    }
+
+    @Test
+    void testLegacyReconstruction_NullInsurer_Allowed() {
+        Policy policy = new Policy(UUID.randomUUID(), "POL-123", UUID.randomUUID(), java.time.Instant.now(), 
+            UUID.randomUUID(), null, null, null, null, BigDecimal.ZERO, PolicyStatus.DRAFT, 1L);
+        assertNull(policy.getInsurerId());
     }
 }

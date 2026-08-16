@@ -54,6 +54,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) // CSRF strategy deferred to implementation per D06/O14
             .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint))
             .authorizeHttpRequests(authz -> authz
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2

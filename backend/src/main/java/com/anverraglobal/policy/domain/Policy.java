@@ -11,6 +11,7 @@ public class Policy {
     private UUID createdBy;
     private Instant createdAt;
     private UUID customerId;
+    private UUID insurerId;
     private UUID agentAId;
     private UUID agentBId;
     private UUID branchId;
@@ -20,13 +21,14 @@ public class Policy {
 
     // For reconstruction from persistence
     public Policy(UUID policyId, String policyNumber, UUID createdBy, Instant createdAt, 
-                  UUID customerId, UUID agentAId, UUID agentBId, UUID branchId, 
+                  UUID customerId, UUID insurerId, UUID agentAId, UUID agentBId, UUID branchId, 
                   BigDecimal premium, PolicyStatus status, Long version) {
         this.policyId = policyId;
         this.policyNumber = policyNumber;
         this.createdBy = createdBy;
         this.createdAt = createdAt;
         this.customerId = customerId;
+        this.insurerId = insurerId;
         this.agentAId = agentAId;
         this.agentBId = agentBId;
         this.branchId = branchId;
@@ -36,7 +38,7 @@ public class Policy {
     }
 
     // Factory for new draft policy
-    public static Policy createDraft(String policyNumber, UUID createdBy, UUID customerId, 
+    public static Policy createDraft(String policyNumber, UUID createdBy, UUID customerId, UUID insurerId,
                                      UUID agentAId, UUID agentBId, UUID branchId) {
         if (customerId == null) {
             throw new IllegalArgumentException("Customer ID must not be null for new policies");
@@ -50,6 +52,7 @@ public class Policy {
             createdBy,
             Instant.now(),
             customerId,
+            insurerId,
             agentAId,
             agentBId,
             branchId,
@@ -71,6 +74,10 @@ public class Policy {
             throw new IllegalStateException("Policy must be in DRAFT or INACTIVE state to be activated");
         }
         
+        if (this.insurerId == null) {
+            throw new IllegalStateException("Policy must have an insurer to be activated");
+        }
+
         int agentCount = 0;
         if (this.agentAId != null) agentCount++;
         if (this.agentBId != null) agentCount++;
@@ -95,6 +102,7 @@ public class Policy {
     public UUID getCreatedBy() { return createdBy; }
     public Instant getCreatedAt() { return createdAt; }
     public UUID getCustomerId() { return customerId; }
+    public UUID getInsurerId() { return insurerId; }
     public UUID getAgentAId() { return agentAId; }
     public UUID getAgentBId() { return agentBId; }
     public UUID getBranchId() { return branchId; }

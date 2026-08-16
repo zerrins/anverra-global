@@ -2,6 +2,7 @@ package com.anverraglobal.policy.application;
 
 import com.anverraglobal.commission.contracts.CommissionManagementService;
 import com.anverraglobal.customer.contracts.CustomerVerificationContract;
+import com.anverraglobal.insurer.contracts.InsurerVerificationContract;
 import com.anverraglobal.organization.contracts.OrganizationScopeResolutionService;
 import com.anverraglobal.organization.contracts.dto.OrganizationScope;
 import com.anverraglobal.policy.application.port.outbound.PolicyRepositoryPort;
@@ -24,7 +25,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class PolicyManagementApplicationServiceTest {
@@ -44,6 +44,9 @@ class PolicyManagementApplicationServiceTest {
     @Mock
     private CustomerVerificationContract customerVerificationContract;
 
+    @Mock
+    private InsurerVerificationContract insurerVerificationContract;
+
     private PolicyManagementApplicationService policyService;
 
     private UUID identityId = UUID.randomUUID();
@@ -54,7 +57,7 @@ class PolicyManagementApplicationServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         policyService = new PolicyManagementApplicationService(
-                commissionManagementService, policyRepositoryPort, eventPublisher, scopeResolutionService, customerVerificationContract);
+                commissionManagementService, policyRepositoryPort, eventPublisher, scopeResolutionService, customerVerificationContract, insurerVerificationContract);
         
         when(scopeResolutionService.resolveScope(identityId, role)).thenReturn(globalScope);
         
@@ -66,14 +69,17 @@ class PolicyManagementApplicationServiceTest {
     void createPolicy_ShouldPublishPolicyCreatedEvent_WhenCustomerIsVerified() {
         String policyNumber = "POL-123";
         UUID customerId = UUID.randomUUID();
+        UUID insurerId = UUID.randomUUID();
         UUID agentAId = UUID.randomUUID();
 
         // Simulate successful verification
         doNothing().when(customerVerificationContract).verifyCustomerActiveAndInScope(customerId, globalScope);
+        doNothing().when(insurerVerificationContract).verifyInsurerActive(insurerId);
 
-        policyService.createPolicy(identityId, role, policyNumber, customerId, agentAId, null, null);
+        policyService.createPolicy(identityId, role, policyNumber, customerId, insurerId, agentAId, null, null);
 
         verify(customerVerificationContract).verifyCustomerActiveAndInScope(customerId, globalScope);
+        verify(insurerVerificationContract).verifyInsurerActive(insurerId);
         verify(policyRepositoryPort).save(any(Policy.class));
         
         ArgumentCaptor<PolicyCreatedEvent> captor = ArgumentCaptor.forClass(PolicyCreatedEvent.class);
@@ -88,7 +94,7 @@ class PolicyManagementApplicationServiceTest {
 
     @Test
     void createPolicy_ShouldThrowException_WhenCustomerIdIsNull() {
-        assertThatThrownBy(() -> policyService.createPolicy(identityId, role, "POL-123", null, UUID.randomUUID(), null, null))
+        assertThatThrownBy(() -> policyService.createPolicy(identityId, role, "POL-123", null, null, UUID.randomUUID(), null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("customerId is required for new Policy");
     }
@@ -100,7 +106,7 @@ class PolicyManagementApplicationServiceTest {
         doThrow(new IllegalStateException("Customer is not ACTIVE"))
                 .when(customerVerificationContract).verifyCustomerActiveAndInScope(customerId, globalScope);
 
-        assertThatThrownBy(() -> policyService.createPolicy(identityId, role, "POL-123", customerId, UUID.randomUUID(), null, null))
+        assertThatThrownBy(() -> policyService.createPolicy(identityId, role, "POL-123", customerId, null, UUID.randomUUID(), null, null))
                 .isInstanceOf(IllegalStateException.class);
                 
         verify(policyRepositoryPort, never()).save(any());
@@ -111,13 +117,14 @@ class PolicyManagementApplicationServiceTest {
         UUID policyId = UUID.randomUUID();
         UUID oldCustomerId = UUID.randomUUID();
         UUID newCustomerId = UUID.randomUUID();
+        UUID insurerId = UUID.randomUUID();
         
-        Policy policy = new Policy(policyId, "POL-123", identityId, java.time.Instant.now(), oldCustomerId, null, null, null, java.math.BigDecimal.ZERO, PolicyStatus.DRAFT, 0L);
+        Policy policy = new Policy(policyId, "POL-123", identityId, java.time.Instant.now(), oldCustomerId, insurerId, null, null, null, java.math.BigDecimal.ZERO, PolicyStatus.DRAFT, 0L);
         when(policyRepositoryPort.findByIdAndScope(policyId, globalScope)).thenReturn(Optional.of(policy));
         
         doNothing().when(customerVerificationContract).verifyCustomerActiveAndInScope(newCustomerId, globalScope);
         
-        policyService.updatePolicy(identityId, role, policyId, newCustomerId, null, null, null);
+        policyService.updatePolicy(identityId, role, policyId, newCustomerId, null, null, null, null);
         
         verify(customerVerificationContract).verifyCustomerActiveAndInScope(newCustomerId, globalScope);
         verify(policyRepositoryPort).save(any(Policy.class));
@@ -128,10 +135,10 @@ class PolicyManagementApplicationServiceTest {
         UUID policyId = UUID.randomUUID();
         UUID customerId = UUID.randomUUID();
         
-        Policy policy = new Policy(policyId, "POL-123", identityId, java.time.Instant.now(), customerId, null, null, null, java.math.BigDecimal.ZERO, PolicyStatus.DRAFT, 0L);
+        Policy policy = new Policy(policyId, "POL-123", identityId, java.time.Instant.now(), customerId, null, null, null, null, java.math.BigDecimal.ZERO, PolicyStatus.DRAFT, 0L);
         when(policyRepositoryPort.findByIdAndScope(policyId, globalScope)).thenReturn(Optional.of(policy));
         
-        policyService.updatePolicy(identityId, role, policyId, customerId, null, null, null);
+        policyService.updatePolicy(identityId, role, policyId, customerId, null, null, null, null);
         
         verify(customerVerificationContract, never()).verifyCustomerActiveAndInScope(any(), any());
         verify(policyRepositoryPort).save(any(Policy.class));
@@ -141,11 +148,11 @@ class PolicyManagementApplicationServiceTest {
     void updatePolicy_ShouldSupportLegacyNullCustomer_WhenCustomerIdPassedIsNull() {
         UUID policyId = UUID.randomUUID();
         // Legacy policy with null customer
-        Policy policy = new Policy(policyId, "POL-123", identityId, java.time.Instant.now(), null, UUID.randomUUID(), null, null, java.math.BigDecimal.ZERO, PolicyStatus.DRAFT, 0L);
+        Policy policy = new Policy(policyId, "POL-123", identityId, java.time.Instant.now(), null, null, UUID.randomUUID(), null, null, java.math.BigDecimal.ZERO, PolicyStatus.DRAFT, 0L);
         when(policyRepositoryPort.findByIdAndScope(policyId, globalScope)).thenReturn(Optional.of(policy));
         
         // Pass null customerId to keep it null
-        policyService.updatePolicy(identityId, role, policyId, null, null, null, null);
+        policyService.updatePolicy(identityId, role, policyId, null, null, null, null, null);
         
         verify(customerVerificationContract, never()).verifyCustomerActiveAndInScope(any(), any());
         
@@ -157,7 +164,7 @@ class PolicyManagementApplicationServiceTest {
     @Test
     void activatePolicy_WhenAgentPresentAndCommissionUnset_ShouldThrowException() {
         UUID policyId = UUID.randomUUID();
-        Policy policy = Policy.createDraft("POL-123", identityId, UUID.randomUUID(), UUID.randomUUID(), null, null);
+        Policy policy = Policy.createDraft("POL-123", identityId, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, null);
         when(policyRepositoryPort.findByIdAndScope(policyId, globalScope)).thenReturn(Optional.of(policy));
         
         // Backend says UNSET
@@ -175,7 +182,7 @@ class PolicyManagementApplicationServiceTest {
     @Test
     void activatePolicy_WhenAgentPresentAndCommissionConfigured_ShouldSucceedAndPublishEvent() {
         UUID policyId = UUID.randomUUID();
-        Policy policy = Policy.createDraft("POL-123", identityId, UUID.randomUUID(), UUID.randomUUID(), null, null);
+        Policy policy = Policy.createDraft("POL-123", identityId, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, null);
         when(policyRepositoryPort.findByIdAndScope(policyId, globalScope)).thenReturn(Optional.of(policy));
         
         // Backend says CONFIGURED
@@ -195,7 +202,7 @@ class PolicyManagementApplicationServiceTest {
     @Test
     void deactivatePolicy_ShouldSucceedAndPublishEvent() {
         UUID policyId = UUID.randomUUID();
-        Policy policy = Policy.createDraft("POL-123", identityId, UUID.randomUUID(), null, null, null);
+        Policy policy = Policy.createDraft("POL-123", identityId, UUID.randomUUID(), UUID.randomUUID(), null, null, null);
         policy.activate(true); // 0 agents, doesn't matter
         
         when(policyRepositoryPort.findByIdAndScope(policyId, globalScope)).thenReturn(Optional.of(policy));
@@ -213,7 +220,7 @@ class PolicyManagementApplicationServiceTest {
     @Test
     void reactivatePolicy_ShouldSucceedAndPublishEvent() {
         UUID policyId = UUID.randomUUID();
-        Policy policy = Policy.createDraft("POL-123", identityId, UUID.randomUUID(), UUID.randomUUID(), null, null);
+        Policy policy = Policy.createDraft("POL-123", identityId, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), null, null);
         // Backend says CONFIGURED for activation
         when(commissionManagementService.isCommissionConfigured(policyId)).thenReturn(true);
         policy.activate(true);

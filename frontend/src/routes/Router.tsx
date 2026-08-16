@@ -13,6 +13,7 @@ const PolicyDetails = React.lazy(() => import('../pages/PolicyDetails'));
 const ReportingDashboard = React.lazy(() => import('../pages/ReportingDashboard'));
 const CustomerList = React.lazy(() => import('../pages/CustomerList'));
 const CustomerDetails = React.lazy(() => import('../pages/CustomerDetails'));
+const InsurerList = React.lazy(() => import('../pages/InsurerList'));
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-full w-full py-12">
     <div className="spinner spinner-md"></div>
@@ -77,6 +78,14 @@ const router = createBrowserRouter([
             element: (
               <React.Suspense fallback={<LoadingFallback />}>
                 <CustomerDetails />
+              </React.Suspense>
+            ),
+          },
+          {
+            path: 'insurers',
+            element: (
+              <React.Suspense fallback={<LoadingFallback />}>
+                <InsurerList />
               </React.Suspense>
             ),
           },
