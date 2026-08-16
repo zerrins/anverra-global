@@ -8,19 +8,20 @@
 This decision record formally freezes the implementation contracts for the Customer and Product domains, resolving the ambiguities left by `REQ-DEC-002` and `REQ-DEC-003`. **Customer and Product implementation is now authorized to proceed.**
 
 ## 1. Customer Ownership
-- **Decision:** Customer is **ORGANIZATION-SCOPED**.
-- **Rationale:** Customer visibility and access must be governed by the existing `OrganizationScope` authorization boundary. The Customer module must not introduce an independent or parallel authorization hierarchy. The concrete persistence representation must reuse the existing Organization hierarchy and select the smallest representation that preserves it. Global Admin remains unrestricted.
+- **Decision:** Customer is **ORGANIZATION-SCOPED**. Additionally, for AGENT-level access, Customer is DIRECTLY ASSIGNED TO AN AGENT.
+- **Global Admin Rule:** Global Admin MAY create a Customer. Since Global Admin lacks a normal membership, ownership MUST be explicitly selected as a TARGET ORGANIZATIONAL ASSIGNMENT (`targetDealerId`, `targetBranchId`, `targetAgentId`). The backend MUST validate this complete hierarchy (agent belongs to branch, branch belongs to dealer) before persisting the Customer with `dealer_id`, `branch_id`, and `agent_id` (which remain NOT NULL). This target assignment is a requested ownership target that is fully validated by the backend, NOT a client-supplied authorization scope.
+- **Rationale:** Customer visibility and access must be governed by the existing `OrganizationScope` authorization boundary. The Customer module must not introduce an independent or parallel authorization hierarchy. Customer remains organizationally anchored through `dealer_id` and `branch_id`, and has `agent_id` for Agent-level ownership/visibility. This aligns Customer Agent visibility with the already-established Agent authorization semantics used by Policy without broadening Agent access across the system. Global Admin remains unrestricted.
 
 ## 2. Customer Visibility
 - **Decision:** Visibility is based strictly on the authenticated user's `OrganizationScope`.
 - **Behavior:**
   - `ROLE_ADMIN` → Unrestricted Customer visibility.
-  - `ROLE_DEALER` → Customers within permitted Dealer scope.
+  - `ROLE_DEALER` → Customers within permitted Dealer/Branch scope.
   - `ROLE_BRANCH_ADMIN` → Customers within permitted Branch scope.
-  - `ROLE_AGENT` → Customers within permitted OrganizationScope.
-  - `ROLE_USER` / `DATA_ENTRY` → Customers within inherited permitted scope.
+  - `ROLE_AGENT` → Customers whose `agent_id` is within `allowedAgentIds`. Two Agents in the same Branch do NOT automatically see each other's Customers.
+  - `ROLE_USER` / `DATA_ENTRY` → Inherits the exact scope of its parent/associated scope.
   - `ROLE_CUSTOMER` → Own Customer record only.
-- **Constraints:** No frontend filtering. Backend `OrganizationScope` remains authoritative. Agent visibility is NOT artificially restricted to only Customers attached to assigned Policies.
+- **Constraints:** No frontend filtering. Backend `OrganizationScope` remains authoritative. No client-supplied scope fields. Frontend must not calculate authorization. Existing Policy Agent visibility must remain unchanged. No new authorization hierarchy is introduced.
 
 ## 3. Customer Authorization
 | Role | List | Read | Create | Update | Lifecycle |
@@ -33,7 +34,7 @@ This decision record formally freezes the implementation contracts for the Custo
 | `ROLE_CUSTOMER` | Self | Self | No | No | No |
 
 ## 4. Customer Schema & API
-- **Fields:** `id` (UUID), `customer_type` (INDIVIDUAL, ORGANIZATION), `name`, `contact_info`, `address_info`, `status` (ACTIVE, INACTIVE), `created_at`, `updated_at`, `version`, `individual_info` (JSONB), `business_info` (JSONB), and organization ownership representation.
+- **Fields:** `id` (UUID), `customer_type` (INDIVIDUAL, ORGANIZATION), `name`, `contact_info`, `address_info`, `status` (ACTIVE, INACTIVE), `created_at`, `updated_at`, `version`, `individual_info` (JSONB), `business_info` (JSONB), and required organization ownership fields: `dealer_id`, `branch_id`, and `agent_id`.
 - **KYC Fields:** PAN, Aadhaar, GSTIN, DOB, etc., remain deferred unless explicitly required by existing authoritative requirements. They should use JSONB if needed for extensibility without strict DB columns.
 - **Events:** NONE FOR MVP.
 - **API Endpoints:**
@@ -74,9 +75,10 @@ This decision record formally freezes the implementation contracts for the Custo
 - **Frontend:** List, filters, forms, Policy creation selection, RFC 7807 error handling, MSW authorization states.
 
 ## 9. Security Invariants
-- `OrganizationScope` remains the absolute backend authorization boundary.
-- No frontend role-based filtering or client-supplied scopes may be trusted.
+- `OrganizationScope` remains the absolute backend authorization boundary. No new authorization hierarchy is introduced.
+- No frontend role-based filtering or client-supplied scopes may be trusted. Frontend must not calculate authorization.
 - Data Entry continues to inherit parent scope.
+- Existing Policy Agent visibility must remain unchanged.
 
 ## 10. Rejected Alternatives
 - *Globally Shared Customers:* Rejected due to data leakage risks across Dealers.

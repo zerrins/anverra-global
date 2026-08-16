@@ -186,6 +186,9 @@ public class OrganizationPersistenceTest {
                 .hasMessageContaining("Multiple organization memberships found");
     }
 
+    @Autowired
+    private OrganizationPersistenceAdapter persistenceAdapter;
+
     @Test
     void testUnknownIdentity_returnsEmptyScope() {
         OrganizationScope scope = scopeResolutionService.resolveScope(UUID.randomUUID(), "ROLE_USER");
@@ -195,6 +198,39 @@ public class OrganizationPersistenceTest {
         assertThat(scope.allowedCustomerIds()).isEmpty();
         assertThat(scope.allowedAgentIds()).isEmpty();
         assertThat(scope.allowedBranchIds()).isEmpty();
+    }
+
+    @Test
+    void testFindAllDealers() {
+        UUID d1 = insertDealer(UUID.randomUUID(), "D1");
+        UUID d2 = insertDealer(UUID.randomUUID(), "D2");
+
+        var dealers = persistenceAdapter.findAllDealers();
+        assertThat(dealers).hasSize(2);
+        assertThat(dealers).extracting(OrganizationPersistencePort.DealerDto::name).containsExactlyInAnyOrder("D1", "D2");
+    }
+
+    @Test
+    void testFindBranchesByDealer() {
+        UUID d1 = insertDealer(UUID.randomUUID(), "D1");
+        UUID b1 = insertBranch(UUID.randomUUID(), d1, "B1");
+        UUID b2 = insertBranch(UUID.randomUUID(), d1, "B2");
+
+        var branches = persistenceAdapter.findBranchesByDealer(d1);
+        assertThat(branches).hasSize(2);
+        assertThat(branches).extracting(OrganizationPersistencePort.BranchDto::name).containsExactlyInAnyOrder("B1", "B2");
+    }
+
+    @Test
+    void testFindAgentIdsByBranch() {
+        UUID branchId = UUID.randomUUID();
+        UUID agent1Id = insertMembership(UUID.randomUUID(), "AGENT", branchId, null, null);
+        UUID agent2Id = insertMembership(UUID.randomUUID(), "AGENT", branchId, null, null);
+        UUID customerId = insertMembership(UUID.randomUUID(), "CUSTOMER", branchId, null, null);
+
+        var agentIds = persistenceAdapter.findAgentIdsByBranch(branchId);
+        assertThat(agentIds).containsExactlyInAnyOrder(agent1Id, agent2Id);
+        assertThat(agentIds).doesNotContain(customerId);
     }
 
     private UUID insertMembership(UUID identityId, String role, UUID branchId, UUID dealerId, UUID parentIdentityId) {

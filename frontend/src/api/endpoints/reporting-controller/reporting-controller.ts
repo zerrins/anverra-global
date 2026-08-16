@@ -27,6 +27,8 @@ import type {
 import { customInstance } from '../../mutator/custom-instance';
 
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
@@ -64,7 +66,7 @@ export const getGetPolicyStatisticsUrl = () => {
   return `/api/v1/reporting/policies/statistics`
 }
 
-export const getPolicyStatistics = async ( options?: RequestInit): Promise<getPolicyStatisticsResponse> => {
+export const getPolicyStatistics = async ( options?: Parameters<typeof customInstance>[1]): Promise<getPolicyStatisticsResponse> => {
 
   return customInstance<getPolicyStatisticsResponse>(getGetPolicyStatisticsUrl(),
   {
@@ -86,16 +88,16 @@ export const getGetPolicyStatisticsQueryKey = () => {
     }
 
 
-export const getGetPolicyStatisticsQueryOptions = <TData = Awaited<ReturnType<typeof getPolicyStatistics>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPolicyStatistics>>, TError, TData>>, }
+export const getGetPolicyStatisticsQueryOptions = <TData = Awaited<ReturnType<typeof getPolicyStatistics>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPolicyStatistics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
-const {query: queryOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetPolicyStatisticsQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPolicyStatistics>>> = ({ signal }) => getPolicyStatistics({ signal });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPolicyStatistics>>> = ({ signal }) => getPolicyStatistics({ signal, ...requestOptions });
 
 
 
@@ -115,7 +117,7 @@ export function useGetPolicyStatistics<TData = Awaited<ReturnType<typeof getPoli
           TError,
           Awaited<ReturnType<typeof getPolicyStatistics>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetPolicyStatistics<TData = Awaited<ReturnType<typeof getPolicyStatistics>>, TError = unknown>(
@@ -125,16 +127,16 @@ export function useGetPolicyStatistics<TData = Awaited<ReturnType<typeof getPoli
           TError,
           Awaited<ReturnType<typeof getPolicyStatistics>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetPolicyStatistics<TData = Awaited<ReturnType<typeof getPolicyStatistics>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPolicyStatistics>>, TError, TData>>, }
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPolicyStatistics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetPolicyStatistics<TData = Awaited<ReturnType<typeof getPolicyStatistics>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPolicyStatistics>>, TError, TData>>, }
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPolicyStatistics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -170,7 +172,7 @@ export const getGetCommissionStatisticsUrl = () => {
   return `/api/v1/reporting/commissions/statistics`
 }
 
-export const getCommissionStatistics = async ( options?: RequestInit): Promise<getCommissionStatisticsResponse> => {
+export const getCommissionStatistics = async ( options?: Parameters<typeof customInstance>[1]): Promise<getCommissionStatisticsResponse> => {
 
   return customInstance<getCommissionStatisticsResponse>(getGetCommissionStatisticsUrl(),
   {
@@ -192,16 +194,16 @@ export const getGetCommissionStatisticsQueryKey = () => {
     }
 
 
-export const getGetCommissionStatisticsQueryOptions = <TData = Awaited<ReturnType<typeof getCommissionStatistics>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommissionStatistics>>, TError, TData>>, }
+export const getGetCommissionStatisticsQueryOptions = <TData = Awaited<ReturnType<typeof getCommissionStatistics>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommissionStatistics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
-const {query: queryOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetCommissionStatisticsQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCommissionStatistics>>> = ({ signal }) => getCommissionStatistics({ signal });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCommissionStatistics>>> = ({ signal }) => getCommissionStatistics({ signal, ...requestOptions });
 
 
 
@@ -221,7 +223,7 @@ export function useGetCommissionStatistics<TData = Awaited<ReturnType<typeof get
           TError,
           Awaited<ReturnType<typeof getCommissionStatistics>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetCommissionStatistics<TData = Awaited<ReturnType<typeof getCommissionStatistics>>, TError = unknown>(
@@ -231,16 +233,16 @@ export function useGetCommissionStatistics<TData = Awaited<ReturnType<typeof get
           TError,
           Awaited<ReturnType<typeof getCommissionStatistics>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetCommissionStatistics<TData = Awaited<ReturnType<typeof getCommissionStatistics>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommissionStatistics>>, TError, TData>>, }
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommissionStatistics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetCommissionStatistics<TData = Awaited<ReturnType<typeof getCommissionStatistics>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommissionStatistics>>, TError, TData>>, }
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCommissionStatistics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 

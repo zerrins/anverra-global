@@ -39,6 +39,8 @@ import type {
 import { customInstance } from '../../mutator/custom-instance';
 
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
@@ -77,7 +79,7 @@ export const getConfigureCommissionUrl = (policyId: string,) => {
 }
 
 export const configureCommission = async (policyId: string,
-    configureCommissionRequest: ConfigureCommissionRequest, options?: RequestInit): Promise<configureCommissionResponse> => {
+    configureCommissionRequest: ConfigureCommissionRequest, options?: Parameters<typeof customInstance>[1]): Promise<configureCommissionResponse> => {
 
   return customInstance<configureCommissionResponse>(getConfigureCommissionUrl(policyId),
   {
@@ -93,15 +95,15 @@ export const configureCommission = async (policyId: string,
 
 
 export const getConfigureCommissionMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof configureCommission>>, TError,{policyId: string;data: ConfigureCommissionRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof configureCommission>>, TError,{policyId: string;data: ConfigureCommissionRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof configureCommission>>, TError,{policyId: string;data: ConfigureCommissionRequest}, TContext> => {
 
 const mutationKey = ['configureCommission'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -109,7 +111,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof configureCommission>>, {policyId: string;data: ConfigureCommissionRequest}> = (props) => {
           const {policyId,data} = props ?? {};
 
-          return  configureCommission(policyId,data,)
+          return  configureCommission(policyId,data,requestOptions)
         }
 
 
@@ -124,7 +126,7 @@ const {mutation: mutationOptions} = options ?
     export type ConfigureCommissionMutationError = unknown
 
     export const useConfigureCommission = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof configureCommission>>, TError,{policyId: string;data: ConfigureCommissionRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof configureCommission>>, TError,{policyId: string;data: ConfigureCommissionRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof configureCommission>>,
         TError,
@@ -160,7 +162,7 @@ export const getListPoliciesUrl = (params: ListPoliciesParams,) => {
   return stringifiedParams.length > 0 ? `/api/v1/policies?${stringifiedParams}` : `/api/v1/policies`
 }
 
-export const listPolicies = async (params: ListPoliciesParams, options?: RequestInit): Promise<listPoliciesResponse> => {
+export const listPolicies = async (params: ListPoliciesParams, options?: Parameters<typeof customInstance>[1]): Promise<listPoliciesResponse> => {
 
   return customInstance<listPoliciesResponse>(getListPoliciesUrl(params),
   {
@@ -182,16 +184,16 @@ export const getListPoliciesQueryKey = (params?: ListPoliciesParams,) => {
     }
 
 
-export const getListPoliciesQueryOptions = <TData = Awaited<ReturnType<typeof listPolicies>>, TError = unknown>(params: ListPoliciesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPolicies>>, TError, TData>>, }
+export const getListPoliciesQueryOptions = <TData = Awaited<ReturnType<typeof listPolicies>>, TError = unknown>(params: ListPoliciesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPolicies>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
-const {query: queryOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getListPoliciesQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPolicies>>> = ({ signal }) => listPolicies(params, { signal });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPolicies>>> = ({ signal }) => listPolicies(params, { signal, ...requestOptions });
 
 
 
@@ -211,7 +213,7 @@ export function useListPolicies<TData = Awaited<ReturnType<typeof listPolicies>>
           TError,
           Awaited<ReturnType<typeof listPolicies>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListPolicies<TData = Awaited<ReturnType<typeof listPolicies>>, TError = unknown>(
@@ -221,16 +223,16 @@ export function useListPolicies<TData = Awaited<ReturnType<typeof listPolicies>>
           TError,
           Awaited<ReturnType<typeof listPolicies>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListPolicies<TData = Awaited<ReturnType<typeof listPolicies>>, TError = unknown>(
- params: ListPoliciesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPolicies>>, TError, TData>>, }
+ params: ListPoliciesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPolicies>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useListPolicies<TData = Awaited<ReturnType<typeof listPolicies>>, TError = unknown>(
- params: ListPoliciesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPolicies>>, TError, TData>>, }
+ params: ListPoliciesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPolicies>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -266,7 +268,7 @@ export const getCreatePolicyUrl = () => {
   return `/api/v1/policies`
 }
 
-export const createPolicy = async (createPolicyRequest: CreatePolicyRequest, options?: RequestInit): Promise<createPolicyResponse> => {
+export const createPolicy = async (createPolicyRequest: CreatePolicyRequest, options?: Parameters<typeof customInstance>[1]): Promise<createPolicyResponse> => {
 
   return customInstance<createPolicyResponse>(getCreatePolicyUrl(),
   {
@@ -282,15 +284,15 @@ export const createPolicy = async (createPolicyRequest: CreatePolicyRequest, opt
 
 
 export const getCreatePolicyMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPolicy>>, TError,{data: CreatePolicyRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPolicy>>, TError,{data: CreatePolicyRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createPolicy>>, TError,{data: CreatePolicyRequest}, TContext> => {
 
 const mutationKey = ['createPolicy'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -298,7 +300,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPolicy>>, {data: CreatePolicyRequest}> = (props) => {
           const {data} = props ?? {};
 
-          return  createPolicy(data,)
+          return  createPolicy(data,requestOptions)
         }
 
 
@@ -313,7 +315,7 @@ const {mutation: mutationOptions} = options ?
     export type CreatePolicyMutationError = unknown
 
     export const useCreatePolicy = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPolicy>>, TError,{data: CreatePolicyRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPolicy>>, TError,{data: CreatePolicyRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createPolicy>>,
         TError,
@@ -343,7 +345,7 @@ export const getReactivatePolicyUrl = (policyId: string,) => {
 }
 
 export const reactivatePolicy = async (policyId: string,
-    lifecycleRequest?: LifecycleRequest, options?: RequestInit): Promise<reactivatePolicyResponse> => {
+    lifecycleRequest?: LifecycleRequest, options?: Parameters<typeof customInstance>[1]): Promise<reactivatePolicyResponse> => {
 
   return customInstance<reactivatePolicyResponse>(getReactivatePolicyUrl(policyId),
   {
@@ -359,15 +361,15 @@ export const reactivatePolicy = async (policyId: string,
 
 
 export const getReactivatePolicyMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactivatePolicy>>, TError,{policyId: string;data?: LifecycleRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactivatePolicy>>, TError,{policyId: string;data?: LifecycleRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof reactivatePolicy>>, TError,{policyId: string;data?: LifecycleRequest}, TContext> => {
 
 const mutationKey = ['reactivatePolicy'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -375,7 +377,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof reactivatePolicy>>, {policyId: string;data?: LifecycleRequest}> = (props) => {
           const {policyId,data} = props ?? {};
 
-          return  reactivatePolicy(policyId,data,)
+          return  reactivatePolicy(policyId,data,requestOptions)
         }
 
 
@@ -390,7 +392,7 @@ const {mutation: mutationOptions} = options ?
     export type ReactivatePolicyMutationError = unknown
 
     export const useReactivatePolicy = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactivatePolicy>>, TError,{policyId: string;data?: LifecycleRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactivatePolicy>>, TError,{policyId: string;data?: LifecycleRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof reactivatePolicy>>,
         TError,
@@ -419,7 +421,7 @@ export const getDeactivatePolicyUrl = (policyId: string,) => {
   return `/api/v1/policies/${policyId}/lifecycle/deactivate`
 }
 
-export const deactivatePolicy = async (policyId: string, options?: RequestInit): Promise<deactivatePolicyResponse> => {
+export const deactivatePolicy = async (policyId: string, options?: Parameters<typeof customInstance>[1]): Promise<deactivatePolicyResponse> => {
 
   return customInstance<deactivatePolicyResponse>(getDeactivatePolicyUrl(policyId),
   {
@@ -435,15 +437,15 @@ export const deactivatePolicy = async (policyId: string, options?: RequestInit):
 
 
 export const getDeactivatePolicyMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivatePolicy>>, TError,{policyId: string}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivatePolicy>>, TError,{policyId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deactivatePolicy>>, TError,{policyId: string}, TContext> => {
 
 const mutationKey = ['deactivatePolicy'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -451,7 +453,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deactivatePolicy>>, {policyId: string}> = (props) => {
           const {policyId} = props ?? {};
 
-          return  deactivatePolicy(policyId,)
+          return  deactivatePolicy(policyId,requestOptions)
         }
 
 
@@ -466,7 +468,7 @@ const {mutation: mutationOptions} = options ?
     export type DeactivatePolicyMutationError = unknown
 
     export const useDeactivatePolicy = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivatePolicy>>, TError,{policyId: string}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivatePolicy>>, TError,{policyId: string}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deactivatePolicy>>,
         TError,
@@ -496,7 +498,7 @@ export const getActivatePolicyUrl = (policyId: string,) => {
 }
 
 export const activatePolicy = async (policyId: string,
-    lifecycleRequest?: LifecycleRequest, options?: RequestInit): Promise<activatePolicyResponse> => {
+    lifecycleRequest?: LifecycleRequest, options?: Parameters<typeof customInstance>[1]): Promise<activatePolicyResponse> => {
 
   return customInstance<activatePolicyResponse>(getActivatePolicyUrl(policyId),
   {
@@ -512,15 +514,15 @@ export const activatePolicy = async (policyId: string,
 
 
 export const getActivatePolicyMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activatePolicy>>, TError,{policyId: string;data?: LifecycleRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activatePolicy>>, TError,{policyId: string;data?: LifecycleRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof activatePolicy>>, TError,{policyId: string;data?: LifecycleRequest}, TContext> => {
 
 const mutationKey = ['activatePolicy'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -528,7 +530,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof activatePolicy>>, {policyId: string;data?: LifecycleRequest}> = (props) => {
           const {policyId,data} = props ?? {};
 
-          return  activatePolicy(policyId,data,)
+          return  activatePolicy(policyId,data,requestOptions)
         }
 
 
@@ -543,7 +545,7 @@ const {mutation: mutationOptions} = options ?
     export type ActivatePolicyMutationError = unknown
 
     export const useActivatePolicy = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activatePolicy>>, TError,{policyId: string;data?: LifecycleRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activatePolicy>>, TError,{policyId: string;data?: LifecycleRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof activatePolicy>>,
         TError,
@@ -572,7 +574,7 @@ export const getResolvePolicyUrl = () => {
   return `/api/v1/policies/resolve`
 }
 
-export const resolvePolicy = async (resolvePolicyRequest: ResolvePolicyRequest, options?: RequestInit): Promise<resolvePolicyResponse> => {
+export const resolvePolicy = async (resolvePolicyRequest: ResolvePolicyRequest, options?: Parameters<typeof customInstance>[1]): Promise<resolvePolicyResponse> => {
 
   return customInstance<resolvePolicyResponse>(getResolvePolicyUrl(),
   {
@@ -588,15 +590,15 @@ export const resolvePolicy = async (resolvePolicyRequest: ResolvePolicyRequest, 
 
 
 export const getResolvePolicyMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolvePolicy>>, TError,{data: ResolvePolicyRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolvePolicy>>, TError,{data: ResolvePolicyRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof resolvePolicy>>, TError,{data: ResolvePolicyRequest}, TContext> => {
 
 const mutationKey = ['resolvePolicy'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -604,7 +606,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof resolvePolicy>>, {data: ResolvePolicyRequest}> = (props) => {
           const {data} = props ?? {};
 
-          return  resolvePolicy(data,)
+          return  resolvePolicy(data,requestOptions)
         }
 
 
@@ -619,7 +621,7 @@ const {mutation: mutationOptions} = options ?
     export type ResolvePolicyMutationError = unknown
 
     export const useResolvePolicy = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolvePolicy>>, TError,{data: ResolvePolicyRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resolvePolicy>>, TError,{data: ResolvePolicyRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof resolvePolicy>>,
         TError,
@@ -648,7 +650,7 @@ export const getGetPolicyUrl = (policyId: string,) => {
   return `/api/v1/policies/${policyId}`
 }
 
-export const getPolicy = async (policyId: string, options?: RequestInit): Promise<getPolicyResponse> => {
+export const getPolicy = async (policyId: string, options?: Parameters<typeof customInstance>[1]): Promise<getPolicyResponse> => {
 
   return customInstance<getPolicyResponse>(getGetPolicyUrl(policyId),
   {
@@ -670,16 +672,16 @@ export const getGetPolicyQueryKey = (policyId: string,) => {
     }
 
 
-export const getGetPolicyQueryOptions = <TData = Awaited<ReturnType<typeof getPolicy>>, TError = unknown>(policyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPolicy>>, TError, TData>>, }
+export const getGetPolicyQueryOptions = <TData = Awaited<ReturnType<typeof getPolicy>>, TError = unknown>(policyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPolicy>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
 ) => {
 
-const {query: queryOptions} = options ?? {};
+const {query: queryOptions, request: requestOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetPolicyQueryKey(policyId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPolicy>>> = ({ signal }) => getPolicy(policyId, { signal });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPolicy>>> = ({ signal }) => getPolicy(policyId, { signal, ...requestOptions });
 
 
 
@@ -699,7 +701,7 @@ export function useGetPolicy<TData = Awaited<ReturnType<typeof getPolicy>>, TErr
           TError,
           Awaited<ReturnType<typeof getPolicy>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetPolicy<TData = Awaited<ReturnType<typeof getPolicy>>, TError = unknown>(
@@ -709,16 +711,16 @@ export function useGetPolicy<TData = Awaited<ReturnType<typeof getPolicy>>, TErr
           TError,
           Awaited<ReturnType<typeof getPolicy>>
         > , 'initialData'
-      >, }
+      >, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetPolicy<TData = Awaited<ReturnType<typeof getPolicy>>, TError = unknown>(
- policyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPolicy>>, TError, TData>>, }
+ policyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPolicy>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetPolicy<TData = Awaited<ReturnType<typeof getPolicy>>, TError = unknown>(
- policyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPolicy>>, TError, TData>>, }
+ policyId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPolicy>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -755,7 +757,7 @@ export const getUpdatePolicyUrl = (policyId: string,) => {
 }
 
 export const updatePolicy = async (policyId: string,
-    updatePolicyRequest: UpdatePolicyRequest, options?: RequestInit): Promise<updatePolicyResponse> => {
+    updatePolicyRequest: UpdatePolicyRequest, options?: Parameters<typeof customInstance>[1]): Promise<updatePolicyResponse> => {
 
   return customInstance<updatePolicyResponse>(getUpdatePolicyUrl(policyId),
   {
@@ -771,15 +773,15 @@ export const updatePolicy = async (policyId: string,
 
 
 export const getUpdatePolicyMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePolicy>>, TError,{policyId: string;data: UpdatePolicyRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePolicy>>, TError,{policyId: string;data: UpdatePolicyRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updatePolicy>>, TError,{policyId: string;data: UpdatePolicyRequest}, TContext> => {
 
 const mutationKey = ['updatePolicy'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -787,7 +789,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePolicy>>, {policyId: string;data: UpdatePolicyRequest}> = (props) => {
           const {policyId,data} = props ?? {};
 
-          return  updatePolicy(policyId,data,)
+          return  updatePolicy(policyId,data,requestOptions)
         }
 
 
@@ -802,7 +804,7 @@ const {mutation: mutationOptions} = options ?
     export type UpdatePolicyMutationError = unknown
 
     export const useUpdatePolicy = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePolicy>>, TError,{policyId: string;data: UpdatePolicyRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePolicy>>, TError,{policyId: string;data: UpdatePolicyRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updatePolicy>>,
         TError,
@@ -832,7 +834,7 @@ export const getUpdatePremiumUrl = (policyId: string,) => {
 }
 
 export const updatePremium = async (policyId: string,
-    updatePremiumRequest: UpdatePremiumRequest, options?: RequestInit): Promise<updatePremiumResponse> => {
+    updatePremiumRequest: UpdatePremiumRequest, options?: Parameters<typeof customInstance>[1]): Promise<updatePremiumResponse> => {
 
   return customInstance<updatePremiumResponse>(getUpdatePremiumUrl(policyId),
   {
@@ -848,15 +850,15 @@ export const updatePremium = async (policyId: string,
 
 
 export const getUpdatePremiumMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePremium>>, TError,{policyId: string;data: UpdatePremiumRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePremium>>, TError,{policyId: string;data: UpdatePremiumRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
 ): UseMutationOptions<Awaited<ReturnType<typeof updatePremium>>, TError,{policyId: string;data: UpdatePremiumRequest}, TContext> => {
 
 const mutationKey = ['updatePremium'];
-const {mutation: mutationOptions} = options ?
+const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
+      : {mutation: { mutationKey, }, request: undefined};
 
 
 
@@ -864,7 +866,7 @@ const {mutation: mutationOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePremium>>, {policyId: string;data: UpdatePremiumRequest}> = (props) => {
           const {policyId,data} = props ?? {};
 
-          return  updatePremium(policyId,data,)
+          return  updatePremium(policyId,data,requestOptions)
         }
 
 
@@ -879,7 +881,7 @@ const {mutation: mutationOptions} = options ?
     export type UpdatePremiumMutationError = unknown
 
     export const useUpdatePremium = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePremium>>, TError,{policyId: string;data: UpdatePremiumRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePremium>>, TError,{policyId: string;data: UpdatePremiumRequest}, TContext>, request?: SecondParameter<typeof customInstance>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updatePremium>>,
         TError,

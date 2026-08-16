@@ -13,7 +13,11 @@ import java.util.NoSuchElementException;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({IllegalArgumentException.class, org.springframework.http.converter.HttpMessageNotReadableException.class})
+    @ExceptionHandler({
+        IllegalArgumentException.class, 
+        org.springframework.http.converter.HttpMessageNotReadableException.class,
+        org.springframework.web.bind.MethodArgumentNotValidException.class
+    })
     public ProblemDetail handleIllegalArgumentException(Exception ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }

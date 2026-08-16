@@ -16,6 +16,34 @@ public interface OrganizationPersistencePort {
      */
     List<UUID> findBranchIdsByDealer(UUID dealerId);
 
+    /**
+     * Finds all dealers.
+     */
+    List<DealerDto> findAllDealers();
+
+    /**
+     * Finds a dealer by ID.
+     */
+    Optional<DealerDto> findDealerById(UUID dealerId);
+
+    /**
+     * Finds all branches for a specific dealer.
+     */
+    List<BranchDto> findBranchesByDealer(UUID dealerId);
+
+    /**
+     * Finds a branch by ID.
+     */
+    Optional<BranchDto> findBranchById(UUID branchId);
+
+    /**
+     * Finds agent identities for a specific branch.
+     */
+    List<UUID> findAgentIdsByBranch(UUID branchId);
+
+    record DealerDto(UUID id, String name) {}
+    record BranchDto(UUID id, String name, UUID dealerId) {}
+
     class OrganizationMembershipDto {
         private final UUID identityId;
         private final String role;

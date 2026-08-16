@@ -27,6 +27,28 @@ public class SecurityConfig {
     private String audience;
 
     @Bean
+    @org.springframework.core.annotation.Order(1)
+    public SecurityFilterChain m2mFilterChain(HttpSecurity http, ProblemDetailAuthenticationEntryPoint entryPoint) throws Exception {
+        http
+            .securityMatcher("/api/v1/identity/sync")
+            .csrf(csrf -> csrf.disable())
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(entryPoint))
+            .authorizeHttpRequests(authz -> authz
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/identity/sync").hasAuthority("SCOPE_write:identity")
+                .anyRequest().denyAll()
+            )
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwt -> jwt
+                    .decoder(jwtDecoder())
+                    // Uses default JwtAuthenticationConverter which maps scopes to SCOPE_* authorities
+                )
+                .authenticationEntryPoint(entryPoint)
+            );
+        return http.build();
+    }
+
+    @Bean
+    @org.springframework.core.annotation.Order(2)
     public SecurityFilterChain filterChain(HttpSecurity http, ProblemDetailAuthenticationEntryPoint entryPoint) throws Exception {
         http
             .csrf(csrf -> csrf.disable()) // CSRF strategy deferred to implementation per D06/O14

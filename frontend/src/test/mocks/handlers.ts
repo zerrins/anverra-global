@@ -35,4 +35,68 @@ export const handlers = [
       last: true,
     });
   }),
+  http.get('http://localhost:8080/api/v1/customers', () => {
+    return HttpResponse.json({
+      content: [
+        {
+          id: 'cust-1',
+          name: 'Acme Corp',
+          customerType: 'ORGANIZATION',
+          status: 'ACTIVE',
+          contactInfo: 'contact@acme.com',
+          businessInfo: 'Business stuff'
+        },
+        {
+          id: 'cust-2',
+          name: 'John Doe',
+          customerType: 'INDIVIDUAL',
+          status: 'ACTIVE',
+          contactInfo: 'john@doe.com',
+          individualInfo: 'Individual stuff'
+        }
+      ],
+      totalElements: 2,
+      totalPages: 1,
+      number: 0,
+      first: true,
+      last: true,
+    });
+  }),
+  http.get('http://localhost:8080/api/v1/customers/:id', ({ params }) => {
+    return HttpResponse.json({
+      id: params.id,
+      name: 'Acme Corp',
+      customerType: 'ORGANIZATION',
+      status: 'ACTIVE',
+      contactInfo: 'contact@acme.com',
+      businessInfo: 'Business stuff'
+    });
+  }),
+  http.get('http://localhost:8080/api/v1/hierarchy/dealers', () => {
+    return HttpResponse.json([
+      { id: '11111111-1111-1111-1111-111111111111', name: 'Dealer One' }
+    ]);
+  }),
+  http.get('http://localhost:8080/api/v1/hierarchy/dealers/:dealerId/branches', () => {
+    return HttpResponse.json([
+      { id: '22222222-2222-2222-2222-222222222222', name: 'Branch One' }
+    ]);
+  }),
+  http.get('http://localhost:8080/api/v1/hierarchy/branches/:branchId/agents', () => {
+    return HttpResponse.json([
+      { id: '33333333-3333-3333-3333-333333333333', name: 'Agent One' }
+    ]);
+  }),
+  http.post('http://localhost:8080/api/v1/customers', () => {
+    return HttpResponse.json({ id: 'new-cust-1', name: 'New Customer' }, { status: 201 });
+  }),
+  http.put('http://localhost:8080/api/v1/customers/:id', ({ params }) => {
+    return HttpResponse.json({ id: params.id, name: 'Updated Customer' });
+  }),
+  http.post('http://localhost:8080/api/v1/customers/:id/lifecycle/activate', () => {
+    return HttpResponse.json({}, { status: 200 });
+  }),
+  http.post('http://localhost:8080/api/v1/customers/:id/lifecycle/deactivate', () => {
+    return HttpResponse.json({}, { status: 200 });
+  }),
 ];

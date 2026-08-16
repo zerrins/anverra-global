@@ -1,6 +1,6 @@
 
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, PieChart } from 'lucide-react';
+import { LayoutDashboard, FileText, PieChart, Users } from 'lucide-react';
 
 export const Sidebar = () => {
   return (
@@ -23,6 +23,13 @@ export const Sidebar = () => {
         >
           <FileText size={20} />
           Policies
+        </NavLink>
+        <NavLink 
+          to="/customers" 
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+        >
+          <Users size={20} />
+          Customers
         </NavLink>
         <NavLink 
           to="/reporting" 
