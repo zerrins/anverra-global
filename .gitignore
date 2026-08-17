@@ -34,8 +34,8 @@ application-local.properties
 .frontend.log
 
 # Graphify folder
-/.graphify-out/
+graphify-out/
 
 # scripts
-/.scripts/
+scripts/
 
