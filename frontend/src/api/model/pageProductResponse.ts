@@ -9,11 +9,11 @@ import type { ProductResponse } from './productResponse';
 import type { SortObject } from './sortObject';
 
 export interface PageProductResponse {
-  totalElements?: number;
   totalPages?: number;
-  numberOfElements?: number;
+  totalElements?: number;
   first?: boolean;
   last?: boolean;
+  numberOfElements?: number;
   pageable?: PageableObject;
   size?: number;
   content?: ProductResponse[];

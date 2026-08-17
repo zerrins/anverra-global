@@ -5,6 +5,10 @@
  * OpenAPI spec version: v0
  */
 
+export * from './branchRequest';
+export * from './branchResponse';
+export * from './branchResponseStatus';
+export * from './branchUpdateRequest';
 export * from './commissionStatisticsResponse';
 export * from './configureCommissionRequest';
 export * from './createCustomerRequest';
@@ -13,10 +17,14 @@ export * from './createInsurerRequest';
 export * from './createPolicyRequest';
 export * from './createProductRequest';
 export * from './customerResponse';
+export * from './dealerRequest';
+export * from './dealerResponse';
+export * from './dealerResponseStatus';
 export * from './hierarchyNodeResponse';
 export * from './identitySyncRequest';
 export * from './insurerResponse';
 export * from './lifecycleRequest';
+export * from './listBranchesParams';
 export * from './listCustomersParams';
 export * from './listInsurersParams';
 export * from './listPoliciesParams';

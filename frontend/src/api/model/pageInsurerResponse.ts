@@ -9,11 +9,11 @@ import type { PageableObject } from './pageableObject';
 import type { SortObject } from './sortObject';
 
 export interface PageInsurerResponse {
-  totalElements?: number;
   totalPages?: number;
-  numberOfElements?: number;
+  totalElements?: number;
   first?: boolean;
   last?: boolean;
+  numberOfElements?: number;
   pageable?: PageableObject;
   size?: number;
   content?: InsurerResponse[];
