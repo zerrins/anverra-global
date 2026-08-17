@@ -174,4 +174,70 @@ export const handlers = [
   http.post('http://localhost:8080/api/v1/insurers/:id/lifecycle/deactivate', () => {
     return HttpResponse.json({}, { status: 200 });
   }),
+  http.get('http://localhost:8080/api/v1/products', ({ request }) => {
+    const url = new URL(request.url);
+    const statusFilter = url.searchParams.get('status');
+    const categoryFilter = url.searchParams.get('category');
+
+    let content = [
+      {
+        id: '777e4567-e89b-12d3-a456-426614174000',
+        name: 'Product One',
+        category: 'LIFE_INSURANCE',
+        status: 'ACTIVE',
+        version: 1
+      },
+      {
+        id: '888e4567-e89b-12d3-a456-426614174000',
+        name: 'Product Two',
+        category: 'HEALTH_INSURANCE',
+        status: 'ACTIVE',
+        version: 1
+      },
+      {
+        id: '999e4567-e89b-12d3-a456-426614174000',
+        name: 'Inactive Product',
+        category: 'MOTOR_INSURANCE',
+        status: 'INACTIVE',
+        version: 1
+      }
+    ];
+
+    if (statusFilter) {
+      content = content.filter(c => c.status === statusFilter);
+    }
+    if (categoryFilter) {
+      content = content.filter(c => c.category === categoryFilter);
+    }
+
+    return HttpResponse.json({
+      content,
+      totalElements: content.length,
+      totalPages: 1,
+      number: 0,
+      first: true,
+      last: true,
+    });
+  }),
+  http.get('http://localhost:8080/api/v1/products/:id', ({ params }) => {
+    return HttpResponse.json({
+      id: params.id,
+      name: 'Product One',
+      category: 'LIFE_INSURANCE',
+      status: 'ACTIVE',
+      version: 1
+    });
+  }),
+  http.post('http://localhost:8080/api/v1/products', () => {
+    return HttpResponse.json({ id: 'new-product', name: 'New Product', category: 'LIFE_INSURANCE', status: 'ACTIVE', version: 1 }, { status: 201 });
+  }),
+  http.put('http://localhost:8080/api/v1/products/:id', ({ params }) => {
+    return HttpResponse.json({ id: params.id, name: 'Updated Product', category: 'LIFE_INSURANCE', status: 'ACTIVE', version: 2 });
+  }),
+  http.post('http://localhost:8080/api/v1/products/:id/lifecycle/activate', () => {
+    return HttpResponse.json({}, { status: 200 });
+  }),
+  http.post('http://localhost:8080/api/v1/products/:id/lifecycle/deactivate', () => {
+    return HttpResponse.json({}, { status: 200 });
+  }),
 ];
