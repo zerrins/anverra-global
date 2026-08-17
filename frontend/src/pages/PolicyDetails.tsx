@@ -10,6 +10,7 @@ import {
 } from '../api/endpoints/policy-controller/policy-controller';
 import { ApiErrorAlert } from '../components/ApiErrorAlert';
 import { ConfigureCommissionModal } from '../components/ConfigureCommissionModal';
+import { PolicyDocumentSection } from '../components/PolicyDocumentSection';
 import { ArrowLeft, Play, Square, RefreshCcw, DollarSign } from 'lucide-react';
 import { useGetInsurer } from '../api/endpoints/insurer-controller/insurer-controller';
 
@@ -214,6 +215,10 @@ const PolicyDetails = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <PolicyDocumentSection policyId={id!} />
       </div>
 
       {isCommissionModalOpen && (

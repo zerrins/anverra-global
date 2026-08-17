@@ -9,6 +9,7 @@ export interface CreatePolicyRequest {
   policyNumber?: string;
   customerId?: string;
   insurerId?: string;
+  productId?: string;
   agentAId?: string;
   agentBId?: string;
   branchId?: string;
