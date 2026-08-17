@@ -1,10 +1,10 @@
 
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, PieChart, Users, Shield } from 'lucide-react';
+import { LayoutDashboard, FileText, PieChart, Users, Shield, Building2 } from 'lucide-react';
 import { useRole } from '../auth/useRole';
 
 export const Sidebar = () => {
-  const { isAdmin } = useRole();
+  const { isAdmin, canManageOrganization } = useRole();
 
   return (
     <aside className="sidebar">
@@ -41,6 +41,15 @@ export const Sidebar = () => {
           <PieChart size={20} />
           Reporting
         </NavLink>
+        {canManageOrganization && (
+          <NavLink
+            to="/dealers"
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+          >
+            <Building2 size={20} />
+            Organization
+          </NavLink>
+        )}
         {isAdmin && (
           <>
             <NavLink

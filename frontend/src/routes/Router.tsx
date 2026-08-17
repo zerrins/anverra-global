@@ -15,6 +15,8 @@ const CustomerList = React.lazy(() => import('../pages/CustomerList'));
 const CustomerDetails = React.lazy(() => import('../pages/CustomerDetails'));
 const InsurerList = React.lazy(() => import('../pages/InsurerList'));
 const ProductList = React.lazy(() => import('../pages/ProductList'));
+const DealerList = React.lazy(() => import('../pages/DealerList'));
+const DealerDetails = React.lazy(() => import('../pages/DealerDetails'));
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-full w-full py-12">
     <div className="spinner spinner-md"></div>
@@ -95,6 +97,22 @@ const router = createBrowserRouter([
             element: (
               <React.Suspense fallback={<LoadingFallback />}>
                 <ProductList />
+              </React.Suspense>
+            ),
+          },
+          {
+            path: 'dealers',
+            element: (
+              <React.Suspense fallback={<LoadingFallback />}>
+                <DealerList />
+              </React.Suspense>
+            ),
+          },
+          {
+            path: 'dealers/:id',
+            element: (
+              <React.Suspense fallback={<LoadingFallback />}>
+                <DealerDetails />
               </React.Suspense>
             ),
           },

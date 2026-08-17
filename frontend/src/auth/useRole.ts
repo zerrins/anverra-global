@@ -5,6 +5,10 @@ export const useRole = () => {
   const roles = user?.['https://anverraglobal.com/roles'] as string[] | undefined;
   
   const isAdmin = roles?.includes('ROLE_ADMIN') ?? false;
+  const isDealer = roles?.includes('ROLE_DEALER') ?? false;
+  const isBranchAdmin = roles?.includes('ROLE_BRANCH_ADMIN') ?? false;
   
-  return { roles, isAdmin };
+  const canManageOrganization = isAdmin || isDealer || isBranchAdmin;
+  
+  return { roles, isAdmin, isDealer, isBranchAdmin, canManageOrganization, user };
 };
