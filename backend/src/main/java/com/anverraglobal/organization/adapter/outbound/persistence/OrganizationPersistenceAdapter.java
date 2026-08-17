@@ -38,29 +38,69 @@ public class OrganizationPersistenceAdapter implements OrganizationPersistencePo
 
 
     @Override
-    public List<DealerDto> findAllDealers() {
+    public List<com.anverraglobal.organization.domain.Dealer> findAllDealers() {
         return StreamSupport.stream(dealerRepository.findAll().spliterator(), false)
-                .map(d -> new DealerDto(d.getId(), d.getName()))
+                .map(this::mapToDomain)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Optional<DealerDto> findDealerById(UUID dealerId) {
+    public Optional<com.anverraglobal.organization.domain.Dealer> findDealerById(UUID dealerId) {
         return dealerRepository.findById(dealerId)
-                .map(d -> new DealerDto(d.getId(), d.getName()));
+                .map(this::mapToDomain);
     }
 
     @Override
-    public List<BranchDto> findBranchesByDealer(UUID dealerId) {
+    public List<com.anverraglobal.organization.domain.Branch> findBranchesByDealer(UUID dealerId) {
         return branchRepository.findByDealerId(dealerId).stream()
-                .map(b -> new BranchDto(b.getId(), b.getName(), b.getDealerId()))
+                .map(this::mapToDomain)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Optional<BranchDto> findBranchById(UUID branchId) {
+    public Optional<com.anverraglobal.organization.domain.Branch> findBranchById(UUID branchId) {
         return branchRepository.findById(branchId)
-                .map(b -> new BranchDto(b.getId(), b.getName(), b.getDealerId()));
+                .map(this::mapToDomain);
+    }
+
+    @Override
+    public void saveDealer(com.anverraglobal.organization.domain.Dealer dealer) {
+        DealerRecord record = new DealerRecord();
+        record.setId(dealer.getId());
+        record.setName(dealer.getName());
+        record.setStatus(dealer.getStatus().name());
+        record.setVersion(dealer.getVersion());
+        dealerRepository.save(record);
+    }
+
+    @Override
+    public void saveBranch(com.anverraglobal.organization.domain.Branch branch) {
+        BranchRecord record = new BranchRecord();
+        record.setId(branch.getId());
+        record.setDealerId(branch.getDealerId());
+        record.setName(branch.getName());
+        record.setStatus(branch.getStatus().name());
+        record.setVersion(branch.getVersion());
+        branchRepository.save(record);
+    }
+
+    private com.anverraglobal.organization.domain.Dealer mapToDomain(DealerRecord record) {
+        return new com.anverraglobal.organization.domain.Dealer(
+                record.getId(),
+                record.getName(),
+                record.getStatus() != null ? com.anverraglobal.organization.domain.OrganizationStatus.valueOf(record.getStatus()) : com.anverraglobal.organization.domain.OrganizationStatus.ACTIVE,
+                record.getVersion()
+        );
+    }
+
+    private com.anverraglobal.organization.domain.Branch mapToDomain(BranchRecord record) {
+        return new com.anverraglobal.organization.domain.Branch(
+                record.getId(),
+                record.getDealerId(),
+                record.getName(),
+                record.getStatus() != null ? com.anverraglobal.organization.domain.OrganizationStatus.valueOf(record.getStatus()) : com.anverraglobal.organization.domain.OrganizationStatus.ACTIVE,
+                record.getVersion()
+        );
     }
 
     @Override

@@ -32,7 +32,7 @@ public class OrganizationHierarchyServiceImplTest {
     void getDealers_admin_success() {
         UUID adminId = UUID.randomUUID();
         UUID dealerId = UUID.randomUUID();
-        Mockito.when(persistencePort.findAllDealers()).thenReturn(List.of(new OrganizationPersistencePort.DealerDto(dealerId, "Dealer 1")));
+        Mockito.when(persistencePort.findAllDealers()).thenReturn(List.of(new com.anverraglobal.organization.domain.Dealer(dealerId, "Dealer 1", com.anverraglobal.organization.domain.OrganizationStatus.ACTIVE, 0L)));
 
         List<HierarchyNodeResponse> dealers = service.getDealers(adminId, "ROLE_ADMIN");
         assertEquals(1, dealers.size());
@@ -53,9 +53,9 @@ public class OrganizationHierarchyServiceImplTest {
         Mockito.when(scopeResolutionService.resolveScope(userId, "ROLE_DEALER"))
                 .thenReturn(OrganizationScope.forDealer(userId, Set.of(branchId)));
         Mockito.when(persistencePort.findDealerById(dealerId))
-                .thenReturn(Optional.of(new OrganizationPersistencePort.DealerDto(dealerId, "D1")));
+                .thenReturn(Optional.of(new com.anverraglobal.organization.domain.Dealer(dealerId, "D1", com.anverraglobal.organization.domain.OrganizationStatus.ACTIVE, 0L)));
         Mockito.when(persistencePort.findBranchesByDealer(dealerId))
-                .thenReturn(List.of(new OrganizationPersistencePort.BranchDto(branchId, "Branch 1", dealerId)));
+                .thenReturn(List.of(new com.anverraglobal.organization.domain.Branch(branchId, dealerId, "Branch 1", com.anverraglobal.organization.domain.OrganizationStatus.ACTIVE, 0L)));
 
         List<HierarchyNodeResponse> branches = service.getBranches(userId, "ROLE_DEALER", dealerId);
         assertEquals(1, branches.size());
@@ -71,9 +71,9 @@ public class OrganizationHierarchyServiceImplTest {
         Mockito.when(scopeResolutionService.resolveScope(userId, "ROLE_DEALER"))
                 .thenReturn(OrganizationScope.forDealer(userId, Set.of(UUID.randomUUID())));
         Mockito.when(persistencePort.findDealerById(otherDealerId))
-                .thenReturn(Optional.of(new OrganizationPersistencePort.DealerDto(otherDealerId, "D2")));
+                .thenReturn(Optional.of(new com.anverraglobal.organization.domain.Dealer(otherDealerId, "D2", com.anverraglobal.organization.domain.OrganizationStatus.ACTIVE, 0L)));
         Mockito.when(persistencePort.findBranchesByDealer(otherDealerId))
-                .thenReturn(List.of(new OrganizationPersistencePort.BranchDto(UUID.randomUUID(), "B2", otherDealerId)));
+                .thenReturn(List.of(new com.anverraglobal.organization.domain.Branch(UUID.randomUUID(), otherDealerId, "B2", com.anverraglobal.organization.domain.OrganizationStatus.ACTIVE, 0L)));
 
         assertThrows(AccessDeniedException.class, () -> service.getBranches(userId, "ROLE_DEALER", otherDealerId));
     }
@@ -89,7 +89,7 @@ public class OrganizationHierarchyServiceImplTest {
         Mockito.when(scopeResolutionService.resolveScope(adminId, "ROLE_BRANCH_ADMIN"))
                 .thenReturn(OrganizationScope.forBranchAdmin(adminId, branchId));
         Mockito.when(persistencePort.findBranchById(branchId))
-                .thenReturn(Optional.of(new OrganizationPersistencePort.BranchDto(branchId, "B1", dealerId)));
+                .thenReturn(Optional.of(new com.anverraglobal.organization.domain.Branch(branchId, dealerId, "B1", com.anverraglobal.organization.domain.OrganizationStatus.ACTIVE, 0L)));
         Mockito.when(persistencePort.findAgentIdsByBranch(branchId))
                 .thenReturn(List.of(agent1Id, agent2Id));
         

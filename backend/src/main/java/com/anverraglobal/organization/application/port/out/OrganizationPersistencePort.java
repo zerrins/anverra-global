@@ -19,30 +19,37 @@ public interface OrganizationPersistencePort {
     /**
      * Finds all dealers.
      */
-    List<DealerDto> findAllDealers();
+    List<com.anverraglobal.organization.domain.Dealer> findAllDealers();
 
     /**
      * Finds a dealer by ID.
      */
-    Optional<DealerDto> findDealerById(UUID dealerId);
+    Optional<com.anverraglobal.organization.domain.Dealer> findDealerById(UUID dealerId);
 
     /**
      * Finds all branches for a specific dealer.
      */
-    List<BranchDto> findBranchesByDealer(UUID dealerId);
+    List<com.anverraglobal.organization.domain.Branch> findBranchesByDealer(UUID dealerId);
 
     /**
      * Finds a branch by ID.
      */
-    Optional<BranchDto> findBranchById(UUID branchId);
+    Optional<com.anverraglobal.organization.domain.Branch> findBranchById(UUID branchId);
+
+    /**
+     * Saves a dealer.
+     */
+    void saveDealer(com.anverraglobal.organization.domain.Dealer dealer);
+
+    /**
+     * Saves a branch.
+     */
+    void saveBranch(com.anverraglobal.organization.domain.Branch branch);
 
     /**
      * Finds agent identities for a specific branch.
      */
     List<UUID> findAgentIdsByBranch(UUID branchId);
-
-    record DealerDto(UUID id, String name) {}
-    record BranchDto(UUID id, String name, UUID dealerId) {}
 
     class OrganizationMembershipDto {
         private final UUID identityId;

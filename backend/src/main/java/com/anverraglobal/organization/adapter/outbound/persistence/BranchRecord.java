@@ -13,6 +13,7 @@ public class BranchRecord {
     private UUID id;
     private UUID dealerId;
     private String name;
+    private String status;
 
     @Version
     private Long version;
@@ -20,10 +21,11 @@ public class BranchRecord {
     public BranchRecord() {
     }
 
-    public BranchRecord(UUID id, UUID dealerId, String name) {
+    public BranchRecord(UUID id, UUID dealerId, String name, String status) {
         this.id = id;
         this.dealerId = dealerId;
         this.name = name;
+        this.status = status;
     }
 
     public UUID getId() {
@@ -48,6 +50,14 @@ public class BranchRecord {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Long getVersion() {

@@ -1,0 +1,3 @@
+-- V10__organization_lifecycle.sql
+ALTER TABLE dealers ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE';
+ALTER TABLE branches ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE';

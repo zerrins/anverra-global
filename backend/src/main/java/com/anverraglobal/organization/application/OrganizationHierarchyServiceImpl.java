@@ -39,7 +39,7 @@ public class OrganizationHierarchyServiceImpl implements OrganizationHierarchyCo
             throw new org.springframework.security.access.AccessDeniedException("Only ADMIN can list all dealers");
         }
         return persistencePort.findAllDealers().stream()
-                .map(d -> new com.anverraglobal.organization.contracts.dto.HierarchyNodeResponse(d.id(), d.name()))
+                .map(d -> new com.anverraglobal.organization.contracts.dto.HierarchyNodeResponse(d.getId(), d.getName()))
                 .toList();
     }
 
@@ -55,7 +55,7 @@ public class OrganizationHierarchyServiceImpl implements OrganizationHierarchyCo
         
         if (!scope.isGlobalAdmin()) {
             branches = branches.stream()
-                    .filter(b -> scope.allowsBranch(b.id()))
+                    .filter(b -> scope.allowsBranch(b.getId()))
                     .toList();
                     
             if (branches.isEmpty() && !"ROLE_ADMIN".equals(requesterRole)) {
@@ -64,7 +64,7 @@ public class OrganizationHierarchyServiceImpl implements OrganizationHierarchyCo
         }
 
         return branches.stream()
-                .map(b -> new com.anverraglobal.organization.contracts.dto.HierarchyNodeResponse(b.id(), b.name()))
+                .map(b -> new com.anverraglobal.organization.contracts.dto.HierarchyNodeResponse(b.getId(), b.getName()))
                 .toList();
     }
 

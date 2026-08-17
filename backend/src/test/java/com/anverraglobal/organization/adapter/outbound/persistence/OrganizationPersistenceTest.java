@@ -207,7 +207,7 @@ public class OrganizationPersistenceTest {
 
         var dealers = persistenceAdapter.findAllDealers();
         assertThat(dealers).hasSize(2);
-        assertThat(dealers).extracting(OrganizationPersistencePort.DealerDto::name).containsExactlyInAnyOrder("D1", "D2");
+        assertThat(dealers).extracting(com.anverraglobal.organization.domain.Dealer::getName).containsExactlyInAnyOrder("D1", "D2");
     }
 
     @Test
@@ -218,7 +218,7 @@ public class OrganizationPersistenceTest {
 
         var branches = persistenceAdapter.findBranchesByDealer(d1);
         assertThat(branches).hasSize(2);
-        assertThat(branches).extracting(OrganizationPersistencePort.BranchDto::name).containsExactlyInAnyOrder("B1", "B2");
+        assertThat(branches).extracting(com.anverraglobal.organization.domain.Branch::getName).containsExactlyInAnyOrder("B1", "B2");
     }
 
     @Test

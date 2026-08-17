@@ -14,6 +14,8 @@ public class DealerRecord {
 
     private String name;
 
+    private String status;
+
     @Version
     private Long version;
 
@@ -31,6 +33,14 @@ public class DealerRecord {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public Long getVersion() {
