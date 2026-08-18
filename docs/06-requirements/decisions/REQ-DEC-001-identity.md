@@ -13,4 +13,5 @@
 - **Authorization model:** NOT YET RESOLVED
 - **JWT claims:** NOT YET RESOLVED
 - **Roles/permissions:** NOT YET RESOLVED
-- **Login/registration UX:** NOT YET RESOLVED
+- **Login/registration UX:** Universal Login via IdP
+- **Password Policy:** 8 characters minimum, 1 capital letter, 1 symbol, 1 number (Configured in IdP)

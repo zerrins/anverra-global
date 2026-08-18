@@ -1,6 +1,8 @@
 spring:
   application:
     name: anverraglobal-backend
+  profiles:
+    active: local
   
   # Spring Modulith configurations
   modulith:
@@ -16,5 +18,5 @@ spring:
 anverra:
   security:
     oauth2:
-      issuer-uri: ${AUTH0_ISSUER_URI:https://dev-tenant.us.auth0.com/}
-      audience: ${AUTH0_AUDIENCE:anverra-api}
+      issuer-uri: ${AUTH0_ISSUER_URI:https://dev-anverra.us.auth0.com/}
+      audience: ${AUTH0_AUDIENCE:https://anverra-dev-api/}

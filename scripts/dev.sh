@@ -54,12 +54,27 @@ _read_pid() {
   [[ -f "$pid_file" ]] && cat "$pid_file" || echo "—"
 }
 
+_kill_port() {
+  local port="$1"
+  local pid
+  pid=$(lsof -t -i :"$port" 2>/dev/null || true)
+  if [[ -n "$pid" ]]; then
+    warn "Port $port is in use by PID $pid. Killing it..."
+    # kill each pid one by one
+    for p in $(echo $pid); do
+      kill -9 "$p" 2>/dev/null || true
+    done
+  fi
+}
+
 # ── Backend ─────────────────────────────────────────────────
 start_backend() {
   if _is_running "$BACKEND_PID_FILE"; then
     warn "Backend already running (PID $(_read_pid "$BACKEND_PID_FILE"))"
     return
   fi
+
+  _kill_port "$BACKEND_PORT"
 
   info "Starting Spring Boot backend on :${BACKEND_PORT} …"
   (
@@ -111,6 +126,8 @@ start_frontend() {
     warn ".env not found in frontend/ — copy .env.example first:"
     warn "  cp frontend/.env.example frontend/.env  (then fill in Auth0 values)"
   fi
+
+  _kill_port "$FRONTEND_PORT"
 
   info "Starting Vite dev server on :${FRONTEND_PORT} …"
   (
@@ -172,6 +189,8 @@ start_logs_ui() {
     warn "Logs UI already running (PID $(_read_pid "$LOGS_UI_PID_FILE"))"
     return
   fi
+
+  _kill_port "$LOGS_UI_PORT"
 
   info "Starting log viewer UI on port ${LOGS_UI_PORT} …"
   node "${SCRIPT_DIR}/logview.js" "${LOGS_UI_PORT}" > "$LOGS_UI_LOG" 2>&1 &
