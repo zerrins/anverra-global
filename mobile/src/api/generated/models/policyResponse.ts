@@ -9,9 +9,14 @@ export interface PolicyResponse {
   policyId?: string;
   policyNumber?: string;
   customerId?: string;
+  insurerId?: string;
+  productId?: string;
   agentAId?: string;
   agentBId?: string;
   branchId?: string;
   premium?: number;
+  effectiveDate?: string;
+  expiryDate?: string;
+  sumAssured?: number;
   status?: string;
 }

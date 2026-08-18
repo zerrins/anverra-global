@@ -5,10 +5,10 @@
  * OpenAPI spec version: v0
  */
 import type { PageableObject } from './pageableObject';
-import type { PolicyResponse } from './policyResponse';
+import type { ProductResponse } from './productResponse';
 import type { SortObject } from './sortObject';
 
-export interface PagePolicyResponse {
+export interface PageProductResponse {
   totalElements?: number;
   totalPages?: number;
   first?: boolean;
@@ -16,7 +16,7 @@ export interface PagePolicyResponse {
   numberOfElements?: number;
   pageable?: PageableObject;
   size?: number;
-  content?: PolicyResponse[];
+  content?: ProductResponse[];
   number?: number;
   sort?: SortObject[];
   empty?: boolean;

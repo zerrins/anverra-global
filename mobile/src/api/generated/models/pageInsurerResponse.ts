@@ -4,11 +4,11 @@
  * OpenAPI definition
  * OpenAPI spec version: v0
  */
+import type { InsurerResponse } from './insurerResponse';
 import type { PageableObject } from './pageableObject';
-import type { PolicyResponse } from './policyResponse';
 import type { SortObject } from './sortObject';
 
-export interface PagePolicyResponse {
+export interface PageInsurerResponse {
   totalElements?: number;
   totalPages?: number;
   first?: boolean;
@@ -16,7 +16,7 @@ export interface PagePolicyResponse {
   numberOfElements?: number;
   pageable?: PageableObject;
   size?: number;
-  content?: PolicyResponse[];
+  content?: InsurerResponse[];
   number?: number;
   sort?: SortObject[];
   empty?: boolean;

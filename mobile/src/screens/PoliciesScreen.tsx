@@ -1,64 +1,125 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
-import { useListPolicies } from '../api/generated/endpoints';
+import { useMobileListPolicies } from '../api/hooks/useMobileListPolicies';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { PoliciesStackParamList } from '../navigation/RootNavigator';
+import { useTheme } from '../theme/ThemeProvider';
+import { PolicyResponse } from '../api/generated/models';
 
 type NavigationProp = NativeStackNavigationProp<PoliciesStackParamList, 'PoliciesList'>;
 
 export function PoliciesScreen() {
+  const theme = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { data, isLoading, isError, refetch, isRefetching } = useListPolicies({
-    pageable: { page: 0, size: 20 },
+  const [page, setPage] = useState(0);
+
+  const { data, isLoading, isError, error, refetch, isRefetching } = useMobileListPolicies({
+    page,
+    size: 20,
+    sort: ['createdAt,desc'],
   });
 
-  const renderItem = ({ item }: { item: any }) => (
+  const isForbidden = (error as any)?.status === 403;
+
+  const renderItem = ({ item }: { item: PolicyResponse }) => (
     <TouchableOpacity 
-      style={styles.card} 
-      onPress={() => navigation.navigate('PolicyDetails', { policyId: item.policyId })}
+      style={[styles.card, { backgroundColor: theme.colors.background, borderColor: theme.colors.border }]} 
+      onPress={() => navigation.navigate('PolicyDetails', { policyId: item.policyId! })}
+      accessibilityLabel={`View details for policy ${item.policyNumber}`}
+      accessibilityRole="button"
     >
-      <Text style={styles.policyNumber}>Policy #{item.policyNumber}</Text>
-      <Text style={styles.status}>Status: {item.status}</Text>
-      <Text style={styles.detail}>Premium: ${item.premium}</Text>
+      <View style={styles.cardHeader}>
+        <Text style={[theme.typography.h2, { color: theme.colors.text }]}>{`#${item.policyNumber}`}</Text>
+        <View style={[styles.badge, { backgroundColor: theme.colors.surface }]}>
+          <Text style={[theme.typography.caption, { color: theme.colors.text }]}>{item.status}</Text>
+        </View>
+      </View>
+      <View style={styles.cardBody}>
+        <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>Premium: ${item.premium}</Text>
+        <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>Sum Assured: ${item.sumAssured}</Text>
+      </View>
     </TouchableOpacity>
   );
 
+  if (isForbidden) {
+    return (
+      <View style={[styles.centered, { backgroundColor: theme.colors.background }]}>
+        <Text style={[theme.typography.h2, { color: theme.colors.error, marginBottom: theme.spacing.md }]}>Access Denied</Text>
+        <Text style={[theme.typography.body, { color: theme.colors.textSecondary, textAlign: 'center' }]}>
+          You do not have permission to view policies.
+        </Text>
+      </View>
+    );
+  }
+
   if (isLoading && !isRefetching) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#2563EB" />
+      <View style={[styles.centered, { backgroundColor: theme.colors.surface }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} accessibilityLabel="Loading policies" />
       </View>
     );
   }
 
   if (isError) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>Failed to load policies. Please try again.</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
-          <Text style={styles.retryText}>Retry</Text>
+      <View style={[styles.centered, { backgroundColor: theme.colors.surface }]}>
+        <Text style={[theme.typography.body, { color: theme.colors.error, marginBottom: theme.spacing.md }]}>Failed to load policies. Please try again.</Text>
+        <TouchableOpacity 
+          style={[styles.button, { backgroundColor: theme.colors.primary }]} 
+          onPress={() => refetch()}
+          accessibilityRole="button"
+        >
+          <Text style={[theme.typography.body, { color: theme.colors.background }]}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   const policies = data?.data?.content || [];
+  const totalPages = data?.data?.totalPages || 0;
+  const isFirst = data?.data?.first ?? true;
+  const isLast = data?.data?.last ?? true;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
       <FlatList
         data={policies}
         keyExtractor={(item) => item.policyId || Math.random().toString()}
         renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ padding: theme.spacing.md }}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={theme.colors.primary} />
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No policies found.</Text>
+          <View style={[styles.centered, { padding: theme.spacing.xl }]}>
+            <Text style={[theme.typography.body, { color: theme.colors.textSecondary }]}>No policies found.</Text>
           </View>
+        }
+        ListFooterComponent={
+          policies.length > 0 ? (
+            <View style={[styles.pagination, { marginTop: theme.spacing.md }]}>
+              <TouchableOpacity
+                style={[styles.button, styles.pageButton, { backgroundColor: isFirst ? theme.colors.border : theme.colors.primary }]}
+                disabled={isFirst}
+                onPress={() => setPage(p => Math.max(0, p - 1))}
+                accessibilityRole="button"
+                accessibilityLabel="Previous page"
+              >
+                <Text style={[theme.typography.body, { color: isFirst ? theme.colors.textSecondary : theme.colors.background }]}>Prev</Text>
+              </TouchableOpacity>
+              <Text style={[theme.typography.body, { color: theme.colors.text }]}>Page {page + 1} of {Math.max(1, totalPages)}</Text>
+              <TouchableOpacity
+                style={[styles.button, styles.pageButton, { backgroundColor: isLast ? theme.colors.border : theme.colors.primary }]}
+                disabled={isLast}
+                onPress={() => setPage(p => p + 1)}
+                accessibilityRole="button"
+                accessibilityLabel="Next page"
+              >
+                <Text style={[theme.typography.body, { color: isLast ? theme.colors.textSecondary : theme.colors.background }]}>Next</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null
         }
       />
     </View>
@@ -66,67 +127,23 @@ export function PoliciesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-  },
-  listContent: {
-    padding: 16,
-  },
+  container: { flex: 1 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   card: {
-    backgroundColor: '#FFFFFF',
     padding: 16,
     borderRadius: 8,
     marginBottom: 12,
+    borderWidth: 1,
+    elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 2,
   },
-  policyNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    color: '#111827',
-  },
-  status: {
-    fontSize: 14,
-    color: '#4B5563',
-    marginBottom: 2,
-  },
-  detail: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  errorText: {
-    color: '#DC2626',
-    fontSize: 16,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#2563EB',
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 6,
-  },
-  retryText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    padding: 32,
-    alignItems: 'center',
-  },
-  emptyText: {
-    color: '#6B7280',
-    fontSize: 16,
-  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
+  cardBody: { gap: 4 },
+  button: { paddingVertical: 10, paddingHorizontal: 24, borderRadius: 6, alignItems: 'center' },
+  pagination: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  pageButton: { minWidth: 80 },
 });

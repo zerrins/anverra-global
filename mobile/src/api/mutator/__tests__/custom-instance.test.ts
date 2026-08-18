@@ -1,9 +1,10 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { customInstance } from '../custom-instance';
-import { getAccessToken } from '../../../auth/getAccessToken';
+import { getAccessToken, handleUnauthorized } from '../../../auth/getAccessToken';
 
 jest.mock('../../../auth/getAccessToken', () => ({
   getAccessToken: jest.fn(),
+  handleUnauthorized: jest.fn(),
 }));
 
 global.fetch = jest.fn();
@@ -47,7 +48,7 @@ describe('customInstance', () => {
     expect(fetchCall.headers).not.toHaveProperty('Authorization');
   });
 
-  it('throws mapped error structure on 401', async () => {
+  it('throws mapped error structure and calls handleUnauthorized on 401', async () => {
     (getAccessToken as jest.Mock<any>).mockResolvedValue('fake-token');
     (global.fetch as jest.Mock<any>).mockResolvedValue({
       ok: false,
@@ -59,6 +60,8 @@ describe('customInstance', () => {
       status: 401,
       data: { detail: 'Unauthorized' },
     });
+    
+    expect(handleUnauthorized).toHaveBeenCalled();
   });
 
   it('throws mapped error structure on 403', async () => {

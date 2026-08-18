@@ -4,9 +4,14 @@ import renderer from 'react-test-renderer';
 import { Text } from 'react-native';
 import { AuthProvider, useAuth } from '../AuthContext';
 import { useAuth0 } from 'react-native-auth0';
+import { useQueryClient } from '@tanstack/react-query';
 
 jest.mock('react-native-auth0', () => ({
   useAuth0: jest.fn(),
+}));
+
+jest.mock('@tanstack/react-query', () => ({
+  useQueryClient: jest.fn(),
 }));
 
 const TestComponent = () => {
@@ -103,7 +108,7 @@ describe('AuthContext', () => {
     expect(mockAuthorize).toHaveBeenCalled();
   });
 
-  it('invokes logout', async () => {
+  it('invokes logout and clears cache', async () => {
     (useAuth0 as jest.Mock<any>).mockReturnValue({
       user: { name: 'Test User' },
       isLoading: false,
@@ -112,6 +117,9 @@ describe('AuthContext', () => {
       clearSession: mockClearSession,
       getCredentials: mockGetCredentials,
     });
+    
+    const mockClear = jest.fn();
+    (useQueryClient as jest.Mock<any>).mockReturnValue({ clear: mockClear });
 
     let component: any;
     await renderer.act(async () => {
@@ -127,5 +135,6 @@ describe('AuthContext', () => {
     });
 
     expect(mockClearSession).toHaveBeenCalled();
+    expect(mockClear).toHaveBeenCalled();
   });
 });

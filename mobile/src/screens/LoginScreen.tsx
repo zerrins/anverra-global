@@ -1,9 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
+import { useTheme, Theme } from '../theme/ThemeProvider';
 
 export function LoginScreen() {
   const { login, isLoading, error } = useAuth();
+  const theme = useTheme();
+  const styles = createStyles(theme);
 
   return (
     <View style={styles.container}>
@@ -24,7 +27,7 @@ export function LoginScreen() {
         accessibilityLabel="Sign in"
       >
         {isLoading ? (
-          <ActivityIndicator color="#FFFFFF" />
+          <ActivityIndicator color={theme.colors.background} />
         ) : (
           <Text style={styles.buttonText}>Sign In</Text>
         )}
@@ -33,42 +36,42 @@ export function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#FFFFFF',
+    padding: theme.spacing.xl,
+    backgroundColor: theme.colors.background,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#111827',
+    ...theme.typography.h1,
+    marginBottom: theme.spacing.sm,
+    color: theme.colors.text,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 48,
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xl,
     textAlign: 'center',
   },
   errorText: {
-    color: '#DC2626',
-    marginBottom: 24,
+    ...theme.typography.body,
+    color: theme.colors.error,
+    marginBottom: theme.spacing.lg,
     textAlign: 'center',
   },
   button: {
-    backgroundColor: '#2563EB',
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 8,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.md,
     width: '100%',
     alignItems: 'center',
   },
   buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    ...theme.typography.body,
+    color: theme.colors.background,
     fontWeight: '600',
   },
 });

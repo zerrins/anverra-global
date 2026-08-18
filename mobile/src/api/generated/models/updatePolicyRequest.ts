@@ -7,7 +7,12 @@
 
 export interface UpdatePolicyRequest {
   customerId?: string;
+  insurerId?: string;
+  productId?: string;
   agentAId?: string;
   agentBId?: string;
   branchId?: string;
+  effectiveDate?: string;
+  expiryDate?: string;
+  sumAssured?: number;
 }

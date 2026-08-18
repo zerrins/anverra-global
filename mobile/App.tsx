@@ -1,8 +1,10 @@
 import React from 'react';
-import { Auth0Provider } from 'react-native-auth0';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './src/auth/AuthContext';
+import { Auth0Provider } from 'react-native-auth0';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { ThemeProvider } from './src/theme/ThemeProvider';
+import { AuthProvider } from './src/auth/AuthContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,15 +20,19 @@ const queryClient = new QueryClient({
 
 export default function App() {
   return (
-    <Auth0Provider
-      domain={process.env.EXPO_PUBLIC_AUTH0_DOMAIN || 'example.auth0.com'}
-      clientId={process.env.EXPO_PUBLIC_AUTH0_CLIENT_ID || 'dummy_client_id'}
-    >
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <RootNavigator />
-        </QueryClientProvider>
-      </AuthProvider>
-    </Auth0Provider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <Auth0Provider
+          domain={process.env.EXPO_PUBLIC_AUTH0_DOMAIN || 'example.auth0.com'}
+          clientId={process.env.EXPO_PUBLIC_AUTH0_CLIENT_ID || 'dummy_client_id'}
+        >
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <RootNavigator />
+            </AuthProvider>
+          </QueryClientProvider>
+        </Auth0Provider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

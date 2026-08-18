@@ -1,4 +1,4 @@
-import { getAccessToken } from '../../auth/getAccessToken';
+import { getAccessToken, handleUnauthorized } from '../../auth/getAccessToken';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -30,6 +30,10 @@ export const customInstance = async <T>(
     body: config.data ? JSON.stringify(config.data) : undefined,
     signal: config.signal,
   });
+
+  if (response.status === 401) {
+    handleUnauthorized();
+  }
 
   if (!response.ok) {
     let errorData = null;

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useAuth0 } from 'react-native-auth0';
-import { setAccessTokenProvider } from './getAccessToken';
+import { useQueryClient } from '@tanstack/react-query';
+import { setAccessTokenProvider, setOnUnauthorized } from './getAccessToken';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -14,6 +15,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { authorize, clearSession, user, error, isLoading, getCredentials } = useAuth0();
+  const queryClient = useQueryClient();
+  
+  // When Auth0 initializes, it populates user if credentials manager has a valid session.
   const isAuthenticated = !!user;
 
   useEffect(() => {
@@ -22,31 +26,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [error]);
 
+  const logout = React.useCallback(async () => {
+    try {
+      await clearSession();
+    } catch (_e) {
+      console.error('Logout failed:', _e);
+    } finally {
+      queryClient.clear();
+    }
+  }, [clearSession, queryClient]);
+
   useEffect(() => {
     setAccessTokenProvider(async () => {
       try {
-        // This will automatically handle token refresh if expired!
         const credentials = await getCredentials();
         return credentials?.accessToken;
       } catch (_e) {
         return undefined;
       }
     });
-  }, [getCredentials]);
+
+    setOnUnauthorized(() => {
+      // Called by API interceptor when 401 happens
+      logout();
+    });
+  }, [getCredentials, logout]);
 
   const login = async () => {
     try {
       await authorize();
     } catch (_e) {
       console.error('Login failed:', _e);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await clearSession();
-    } catch (_e) {
-      console.error('Logout failed:', _e);
     }
   };
 

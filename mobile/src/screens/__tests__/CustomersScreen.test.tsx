@@ -1,11 +1,11 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import React from 'react';
 import renderer from 'react-test-renderer';
-import { PoliciesScreen } from '../PoliciesScreen';
-import * as hooks from '../../api/hooks/useMobileListPolicies';
+import { CustomersScreen } from '../CustomersScreen';
+import * as hooks from '../../api/hooks/useMobileListCustomers';
 
-jest.mock('../../api/hooks/useMobileListPolicies', () => ({
-  useMobileListPolicies: jest.fn(),
+jest.mock('../../api/hooks/useMobileListCustomers', () => ({
+  useMobileListCustomers: jest.fn(),
 }));
 
 jest.mock('@react-navigation/native', () => ({
@@ -14,9 +14,9 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
-describe('PoliciesScreen', () => {
+describe('CustomersScreen', () => {
   it('renders loading state', async () => {
-    (hooks.useMobileListPolicies as jest.Mock<any>).mockReturnValue({
+    (hooks.useMobileListCustomers as jest.Mock<any>).mockReturnValue({
       data: null,
       isLoading: true,
       isError: false,
@@ -24,13 +24,13 @@ describe('PoliciesScreen', () => {
 
     let component: any;
     await renderer.act(async () => {
-      component = renderer.create(<PoliciesScreen />);
+      component = renderer.create(<CustomersScreen />);
     });
     expect(component.toJSON()).toBeTruthy();
   });
 
   it('renders error state', async () => {
-    (hooks.useMobileListPolicies as jest.Mock<any>).mockReturnValue({
+    (hooks.useMobileListCustomers as jest.Mock<any>).mockReturnValue({
       data: null,
       isLoading: false,
       isError: true,
@@ -39,14 +39,14 @@ describe('PoliciesScreen', () => {
 
     let component: any;
     await renderer.act(async () => {
-      component = renderer.create(<PoliciesScreen />);
+      component = renderer.create(<CustomersScreen />);
     });
     const root = component.root;
-    expect(root.findByProps({ children: 'Failed to load policies. Please try again.' })).toBeTruthy();
+    expect(root.findByProps({ children: 'Failed to load customers. Please try again.' })).toBeTruthy();
   });
 
   it('renders empty list state', async () => {
-    (hooks.useMobileListPolicies as jest.Mock<any>).mockReturnValue({
+    (hooks.useMobileListCustomers as jest.Mock<any>).mockReturnValue({
       data: { data: { content: [] } },
       isLoading: false,
       isError: false,
@@ -54,14 +54,14 @@ describe('PoliciesScreen', () => {
 
     let component: any;
     await renderer.act(async () => {
-      component = renderer.create(<PoliciesScreen />);
+      component = renderer.create(<CustomersScreen />);
     });
     const root = component.root;
-    expect(root.findByProps({ children: 'No policies found.' })).toBeTruthy();
+    expect(root.findByProps({ children: 'No customers found.' })).toBeTruthy();
   });
 
   it('renders 403 access denied state', async () => {
-    (hooks.useMobileListPolicies as jest.Mock<any>).mockReturnValue({
+    (hooks.useMobileListCustomers as jest.Mock<any>).mockReturnValue({
       data: null,
       isLoading: false,
       isError: true,
@@ -70,25 +70,26 @@ describe('PoliciesScreen', () => {
 
     let component: any;
     await renderer.act(async () => {
-      component = renderer.create(<PoliciesScreen />);
+      component = renderer.create(<CustomersScreen />);
     });
     const root = component.root;
     expect(root.findByProps({ children: 'Access Denied' })).toBeTruthy();
   });
 
-  it('renders policies with pagination', async () => {
-    (hooks.useMobileListPolicies as jest.Mock<any>).mockReturnValue({
-      data: { data: { content: [{ policyId: '1', policyNumber: 'POL123', status: 'ACTIVE', premium: 100 }], totalPages: 2, first: true, last: false } },
+  it('renders customers with pagination and search', async () => {
+    (hooks.useMobileListCustomers as jest.Mock<any>).mockReturnValue({
+      data: { data: { content: [{ id: '1', name: 'John Doe', status: 'ACTIVE', customerType: 'INDIVIDUAL' }], totalPages: 2, first: true, last: false } },
       isLoading: false,
       isError: false,
     });
 
     let component: any;
     await renderer.act(async () => {
-      component = renderer.create(<PoliciesScreen />);
+      component = renderer.create(<CustomersScreen />);
     });
     const root = component.root;
-    expect(root.findByProps({ children: '#POL123' })).toBeTruthy();
+    expect(root.findByProps({ children: 'John Doe' })).toBeTruthy();
     expect(root.findByProps({ children: 'Next' })).toBeTruthy();
+    expect(root.findByProps({ placeholder: 'Search by name...' })).toBeTruthy();
   });
 });
